@@ -508,7 +508,7 @@ function setSize(s) {
   }
   $('#a6Hint').hidden = s !== 'a6';
   pageStyle.textContent = s === 'a6'
-    ? '@page { size: 105mm 148mm; margin: 0; }'
+    ? '@page { size: A4 portrait; margin: 0; }'
     : '@page { size: A4 portrait; margin: 9mm; }';
   localStorage.setItem('wsf.size', s);
   fitA6();
@@ -535,5 +535,9 @@ for (const id of ['optFlavour', 'optOverview', 'optTraits', 'optLores']) {
   const v = localStorage.getItem('wsf.' + id);
   if (v !== null) $('#' + id).checked = v === '1';
 }
-if (savedList) generate();
+/* URL-parameters: ?size=l|s|a6 en ?demo=1 (voorbeeldlijst laden) */
+const qp = new URLSearchParams(location.search);
+if (qp.get('size')) setSize(qp.get('size'));
+if (qp.get('demo') === '1') { $('#listInput').value = SAMPLE; generate(); }
+else if (savedList) generate();
 })();

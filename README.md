@@ -29,8 +29,10 @@ geen internetverbinding nodig tijdens gebruik.
 - **Groot** (1 kaart per kolom), **Compact** (2 kolommen per A4) of **A6-kaarten**:
   elke kaart is dan exact 105 × 148 mm en de inhoud schaalt automatisch passend
   (lange warscrolls gaan eerst naar twee kolommen zodat de tekst leesbaar blijft).
-  Bij afdrukken wordt elke A6-kaart een eigen pagina: print direct op A6-(kaart)papier,
-  of kies in het printvenster A4 met **4 pagina's per vel** voor een 2×2-snijvel.
+  Bij afdrukken komen er automatisch **4 kaarten op één A4-vel** (2×2-snijvel; een kwart
+  A4 is exact A6). Printvenster: papier A4, schaal 100%, marges "Geen", en zet
+  **kop- en voetteksten uit** (anders drukt de browser datum/URL op het vel).
+- URL-parameters voor de live versie: `?demo=1` laadt de voorbeeldlijst, `?size=a6|s|l` kiest het formaat.
 - Flavourtekst aan/uit.
 - Klik op een kaartkop om die kaart bij het afdrukken over te slaan.
 - Voeg via *Extra kaart* elke willekeurige warscroll toe (handig voor Spearhead of proxies).

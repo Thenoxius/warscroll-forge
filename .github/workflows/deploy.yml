@@ -5,6 +5,8 @@ name: Deploy naar GitHub Pages
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '17 4 * * 1'   # elke maandag 04:17 UTC: verse Wahapedia-data deployen
   workflow_dispatch:
 
 permissions:

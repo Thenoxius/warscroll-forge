@@ -376,9 +376,12 @@ table.weapons { width: 100%; border-collapse: collapse; margin-bottom: 7px; }
   .cards.size-l, .cards.size-s { max-width: none; margin: 0; }
   .card { box-shadow: none; }
   .card.excluded { display: none; }
-  .cards.size-a6 { display: block; }
-  .cards.size-a6 .card { page-break-after: always; break-after: page; border-radius: 0; }
-  .cards.size-a6 .card:last-child { page-break-after: auto; break-after: auto; }
+  /* A6-modus: 2×2-snijvel op A4 (een kwart A4 is exact A6) */
+  .cards.size-a6 {
+    display: grid; grid-template-columns: 105mm 105mm; grid-auto-rows: 148mm;
+    gap: 0; justify-content: center; width: 210mm; max-width: none; margin: 0;
+  }
+  .cards.size-a6 .card { width: 105mm; height: 148mm; border-radius: 0; break-inside: avoid; }
   .cards.size-a6 .section-break { display: none; }
   .section-break { color: #6e5622; }
   .section-break::before, .section-break::after { border-color: #a89467; }
