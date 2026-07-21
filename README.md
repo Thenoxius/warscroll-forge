@@ -4,6 +4,10 @@ Zet een geëxporteerde legerlijst uit de officiële **Warhammer Age of Sigmar-ap
 printbare referentiekaarten in AoS-stijl. Alles draait **volledig lokaal** — geen server,
 geen internetverbinding nodig tijdens gebruik.
 
+**Live versie:** https://thenoxius.github.io/warscroll-forge/
+(elke push naar `main` haalt automatisch de nieuwste Wahapedia-data op en deployt via
+[GitHub Actions](https://github.com/Thenoxius/warscroll-forge/actions))
+
 ## Gebruik
 
 1. Dubbelklik op `index.html` (werkt direct in elke browser, ook offline).

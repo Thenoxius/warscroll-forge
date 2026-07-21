@@ -1,14 +1,14 @@
 name: Deploy naar GitHub Pages
 
+# Bij elke push naar main: verse Wahapedia-data ophalen, compileren en
+# publiceren naar de gh-pages-branch (waar GitHub Pages van serveert).
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -16,19 +16,17 @@ concurrency:
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Wahapedia-data bijwerken
-        # Haalt bij elke push de nieuwste CSV-export op en compileert data/data.js.
         # Mislukt dit (bv. Wahapedia onbereikbaar), dan deployen we de gecommitte data.
         run: node scripts/update-data.mjs || echo "::warning::Data-update mislukt — deploy gebruikt de gecommitte data."
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publiceren naar gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B gh-pages
+          git add -A
+          git commit -m "Deploy van $GITHUB_SHA met data-update $(date -u +%F)" || echo "Geen wijzigingen te committen"
+          git push --force origin gh-pages
