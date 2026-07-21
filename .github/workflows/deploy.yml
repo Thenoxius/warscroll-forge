@@ -22,6 +22,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Wahapedia-data bijwerken
+        # Haalt bij elke push de nieuwste CSV-export op en compileert data/data.js.
+        # Mislukt dit (bv. Wahapedia onbereikbaar), dan deployen we de gecommitte data.
+        run: node scripts/update-data.mjs || echo "::warning::Data-update mislukt — deploy gebruikt de gecommitte data."
       - uses: actions/configure-pages@v5
         with:
           enablement: true
