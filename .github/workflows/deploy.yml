@@ -26,6 +26,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Wahapedia-data bijwerken
         run: node scripts/update-data.mjs || echo "::warning::Data-update mislukt — deploy gebruikt de gecommitte data."
+      - name: Cache-busting versie invullen
+        run: sed -i "s/__BUILD__/${GITHUB_RUN_ID}/g" index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
