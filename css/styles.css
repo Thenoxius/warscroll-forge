@@ -1,0 +1,386 @@
+/* ============ Warscroll Forge — Age of Sigmar stijl ============ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #191613;
+  --bg-panel: #241f1a;
+  --bg-panel-2: #2d2721;
+  --ink: #24201b;
+  --parchment: #f3ecdc;
+  --parchment-dark: #e9dfc8;
+  --gold: #b8933d;
+  --gold-bright: #d9b45c;
+  --gold-dim: #8a6d2c;
+  --crimson: #8f1f1f;
+  --text-dim: #b3a68d;
+  --head-grad: linear-gradient(175deg, #3b352e 0%, #262119 70%, #1d1914 100%);
+  /* fasekleuren (AoS 4e) */
+  --ph-passive: #3f3b38;
+  --ph-start: #4a5560;
+  --ph-hero: #a3841c;
+  --ph-movement: #75716c;
+  --ph-shooting: #1b6672;
+  --ph-charge: #c26e1d;
+  --ph-combat: #9e2820;
+  --ph-end: #6d4f93;
+  --ph-defensive: #2e6e46;
+  --serif: 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif;
+  --sans: 'Segoe UI', Tahoma, Arial, sans-serif;
+}
+
+html { height: 100%; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  background-image: radial-gradient(ellipse at 20% -10%, #2c261f 0%, var(--bg) 55%);
+  color: #e8e0cf;
+  min-height: 100%;
+}
+
+/* ---------- Topbar ---------- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 10px 20px;
+  background: linear-gradient(180deg, #2c261f, #1d1914);
+  border-bottom: 2px solid var(--gold-dim);
+  box-shadow: 0 2px 12px rgba(0,0,0,.5);
+  position: sticky; top: 0; z-index: 10;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark {
+  font-size: 28px; color: var(--gold-bright);
+  width: 46px; height: 46px; display: grid; place-items: center;
+  border: 2px solid var(--gold-dim); border-radius: 4px;
+  background: radial-gradient(circle at 30% 30%, #3b352c, #211c15);
+  transform: rotate(45deg);
+}
+.brand-mark { line-height: 1; }
+.brand-mark::first-line { line-height: 1; }
+.brand h1 {
+  font-family: var(--serif); font-size: 22px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--gold-bright); font-weight: 700;
+}
+.tagline { font-size: 12px; color: var(--text-dim); letter-spacing: .5px; }
+.topbar-actions { display: flex; align-items: center; gap: 14px; }
+.data-version { font-size: 11px; color: var(--text-dim); }
+
+/* ---------- Layout ---------- */
+main { display: flex; align-items: flex-start; gap: 0; }
+.panel {
+  width: 340px; flex: 0 0 340px;
+  padding: 16px; margin: 16px;
+  background: var(--bg-panel);
+  border: 1px solid #3d3529;
+  border-top: 3px solid var(--gold);
+  border-radius: 6px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.45);
+  position: sticky; top: 78px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.panel-label {
+  display: block; font-family: var(--serif); text-transform: uppercase;
+  letter-spacing: 1.5px; font-size: 12px; color: var(--gold-bright); margin-bottom: 8px;
+}
+textarea {
+  width: 100%; height: 260px; resize: vertical;
+  background: #17140f; color: #ded5bf;
+  border: 1px solid #453b2c; border-radius: 4px;
+  padding: 10px; font: 12px/1.5 Consolas, monospace;
+}
+textarea:focus { outline: 1px solid var(--gold-dim); }
+.btn-row { display: flex; gap: 8px; margin-top: 10px; }
+.btn {
+  cursor: pointer; border-radius: 4px; padding: 9px 14px;
+  font-family: var(--serif); font-size: 14px; letter-spacing: 1px; text-transform: uppercase;
+  transition: filter .15s, transform .05s;
+}
+.btn:active { transform: translateY(1px); }
+.btn-gold {
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold) 55%, var(--gold-dim));
+  color: #201a0e; border: 1px solid #6e5622; font-weight: 700;
+  text-shadow: 0 1px 0 rgba(255,255,255,.25);
+}
+.btn-gold:hover { filter: brightness(1.1); }
+.btn-ghost {
+  background: transparent; color: var(--gold-bright);
+  border: 1px solid var(--gold-dim);
+}
+.btn-ghost:hover { background: rgba(184,147,61,.12); }
+
+.options { border: 1px solid #3d3529; border-radius: 4px; padding: 10px 12px; margin-top: 14px; }
+.options legend {
+  font-family: var(--serif); text-transform: uppercase; letter-spacing: 1.5px;
+  font-size: 11px; color: var(--gold-bright); padding: 0 6px;
+}
+.opt-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; }
+.opt-name { flex: 0 0 auto; color: var(--text-dim); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+.opt-row input[type=checkbox] { accent-color: var(--gold); width: 15px; height: 15px; }
+.seg { display: flex; border: 1px solid var(--gold-dim); border-radius: 4px; overflow: hidden; }
+.seg-btn {
+  background: transparent; color: var(--text-dim); border: 0; cursor: pointer;
+  padding: 5px 10px; font-size: 11px;
+}
+.seg-btn.active { background: var(--gold); color: #201a0e; font-weight: 600; }
+.add-row { display: flex; gap: 6px; }
+.add-row input {
+  flex: 1; background: #17140f; color: #ded5bf; border: 1px solid #453b2c;
+  border-radius: 4px; padding: 7px 9px; font-size: 13px;
+}
+.status { margin-top: 12px; font-size: 12px; line-height: 1.5; }
+.status .ok { color: #9dc08b; }
+.status .warn { color: #e0a640; }
+.status ul { margin: 4px 0 0 18px; }
+.hint, .credits { margin-top: 12px; font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+
+/* ---------- Kaartengebied ---------- */
+#cardsWrap { flex: 1; padding: 16px 20px 60px 4px; min-width: 0; }
+.cards { column-gap: 8mm; }
+.cards.size-l { column-count: 1; max-width: 200mm; margin: 0 auto; }
+.cards.size-s { column-count: 2; max-width: 300mm; margin: 0 auto; font-size: 0.86em; }
+
+/* A6-modus: vaste kaartgrootte 105 × 148 mm, inhoud schaalt passend */
+.cards.size-a6 {
+  column-count: auto; display: flex; flex-wrap: wrap; gap: 6mm;
+  justify-content: center; max-width: none; font-size: 0.86em;
+}
+.cards.size-a6 .section-break { flex-basis: 100%; }
+.cards.size-a6 .card {
+  width: 105mm; height: 148mm; margin: 0;
+  display: flex; flex-direction: column;
+}
+.cards.size-a6 .card-head { flex: 0 0 auto; }
+.cards.size-a6 .card-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.cards.size-a6 .kwbar, .cards.size-a6 .card-foot { flex: 0 0 auto; }
+.fitbox { transform-origin: top left; }
+.fitbox.two-col .abilities { columns: 2; column-gap: 8px; }
+.cards:empty::after {
+  content: 'Plak links je legerlijst en klik op “Maak kaarten”.';
+  display: block; text-align: center; color: var(--text-dim);
+  font-family: var(--serif); font-style: italic; padding: 80px 20px; font-size: 15px;
+}
+
+/* ---------- Kaart ---------- */
+.card {
+  break-inside: avoid;
+  background:
+    linear-gradient(160deg, rgba(255,255,255,.35), rgba(255,255,255,0) 30%),
+    radial-gradient(ellipse at 80% 110%, var(--parchment-dark), var(--parchment) 60%);
+  color: var(--ink);
+  border: 1px solid #9a8a63;
+  outline: 1px solid #d8cdb2;
+  outline-offset: -3px;
+  border-radius: 5px;
+  margin: 0 0 8mm 0;
+  box-shadow: 0 3px 10px rgba(0,0,0,.45);
+  overflow: hidden;
+  font-size: 12px; line-height: 1.42;
+}
+.card.excluded { opacity: .35; }
+.card.excluded .card-head::after {
+  content: 'OVERGESLAGEN BIJ AFDRUKKEN';
+  position: absolute; inset: auto 8px 4px auto;
+  font-size: 9px; letter-spacing: 1px; color: var(--gold-bright);
+}
+
+/* Kop */
+.card-head {
+  position: relative;
+  display: flex; align-items: center; gap: 12px;
+  background: var(--head-grad);
+  border-bottom: 2px solid var(--gold);
+  padding: 8px 12px;
+  color: #f0e6cf;
+  cursor: pointer;
+  min-height: 58px;
+}
+.card-head .title { flex: 1; min-width: 0; }
+.card-head h2 {
+  font-family: var(--serif); font-weight: 700; font-size: 17px;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--gold-bright);
+  text-shadow: 0 1px 2px #000;
+  line-height: 1.15;
+}
+.card-head .subtitle {
+  font-size: 10.5px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: #cfc3a4; margin-top: 3px;
+}
+.pts {
+  flex: 0 0 auto; text-align: center;
+  border: 1.5px solid var(--gold); border-radius: 50%;
+  width: 46px; height: 46px;
+  display: grid; place-content: center;
+  background: radial-gradient(circle at 35% 30%, #45403a, #211d18);
+}
+.pts b { font-size: 15px; color: #fff; line-height: 1; }
+.pts span { font-size: 8px; letter-spacing: 1px; color: var(--gold-bright); text-transform: uppercase; }
+.count-badge {
+  position: absolute; top: -1px; left: -1px;
+  background: var(--crimson); color: #fff;
+  font-size: 11px; font-weight: 700; padding: 2px 8px;
+  border-bottom-right-radius: 6px; border: 1px solid #5f1414; border-left: 0; border-top: 0;
+}
+
+/* Statdiamant */
+.stats { flex: 0 0 auto; position: relative; width: 104px; height: 104px; margin: 2px 0; }
+.stat {
+  position: absolute; width: 44px; height: 44px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #4a443c, #16130f 75%);
+  border: 1.5px solid var(--gold);
+  display: grid; place-content: center; text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,.6);
+}
+.stat b { font-size: 14px; color: #fff; line-height: 1.05; }
+.stat span { font-size: 6.5px; letter-spacing: .8px; color: var(--gold-bright); text-transform: uppercase; }
+.stat.move    { top: 0;    left: 30px; }
+.stat.save    { top: 30px; left: 60px; }
+.stat.control { top: 60px; left: 30px; }
+.stat.health  { top: 30px; left: 0; }
+.stat.ward {
+  width: 34px; height: 34px; top: 35px; left: 35px; z-index: 1;
+  background: radial-gradient(circle at 35% 28%, #6e5622, #2c2210 75%);
+  border-color: #e6c886;
+}
+.stat.ward b { font-size: 11px; }
+.stat.ward span { font-size: 5.5px; }
+.stats.no-ward .stat.move    { top: 0;    left: 30px; }
+
+/* Body */
+.card-body { padding: 8px 10px 4px; }
+
+/* Wapentabellen */
+table.weapons { width: 100%; border-collapse: collapse; margin-bottom: 7px; }
+.weapons caption {
+  text-align: left; font-family: var(--serif); font-weight: 700;
+  font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: #fff; background: linear-gradient(180deg, #4a4238, #2b2620);
+  padding: 3px 8px; border-left: 3px solid var(--gold);
+}
+.weapons th {
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  background: #d9cdac; color: #4a4128; padding: 2px 4px;
+  border-bottom: 1px solid #a89467;
+}
+.weapons th:first-child { text-align: left; padding-left: 8px; }
+.weapons td {
+  text-align: center; padding: 3px 4px; font-size: 11.5px; font-weight: 600;
+  border-bottom: 1px solid #cfc2a0;
+}
+.weapons td.wname { text-align: left; font-weight: 600; padding-left: 8px; width: 42%; }
+.weapons .wab { display: block; font-weight: 400; font-style: italic; font-size: 10px; color: #6b5d3d; }
+.weapons tr:nth-child(even) td { background: rgba(190,172,128,.14); }
+
+/* Ability-blokken */
+.abilities { columns: 1; }
+.size-s .abilities, .print-two .abilities { columns: 1; }
+.ab {
+  break-inside: avoid;
+  border: 1px solid var(--ph, var(--ph-passive));
+  border-left-width: 4px;
+  border-radius: 3px;
+  background: rgba(255,255,255,.55);
+  margin-bottom: 7px;
+  overflow: hidden;
+}
+.ab-head {
+  background: var(--ph, var(--ph-passive));
+  color: #fff; padding: 3px 8px 4px;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.ab-head .cond {
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase; opacity: .9;
+  flex: 1;
+}
+.ab-head .icons { display: flex; gap: 4px; align-self: center; }
+.ab-head svg { width: 12px; height: 12px; fill: #fff; }
+.ab-name {
+  font-family: var(--serif); font-weight: 700; font-size: 12.5px;
+  letter-spacing: .8px; text-transform: uppercase;
+  padding: 4px 8px 0; color: var(--ph, var(--ph-passive));
+}
+.ab-name .tag {
+  font-family: var(--sans); font-size: 8.5px; font-weight: 700; letter-spacing: 1px;
+  background: var(--gold); color: #241d0e; border-radius: 2px;
+  padding: 1px 5px; vertical-align: 2px; margin-left: 6px;
+}
+.ab-body { padding: 2px 8px 6px; font-size: 11.5px; }
+.ab-body .legend { font-style: italic; color: #6b5d3d; font-size: 10.5px; margin-bottom: 3px; }
+.ab-kw {
+  border-top: 1px solid var(--ph, var(--ph-passive));
+  font-size: 9px; letter-spacing: .8px; text-transform: uppercase;
+  padding: 2px 8px; color: var(--ph, var(--ph-passive)); background: rgba(0,0,0,.04);
+}
+.kw { font-weight: 700; text-transform: uppercase; font-size: .92em; letter-spacing: .3px; }
+
+/* Keywordbalken */
+.kwbar {
+  display: flex; gap: 8px; align-items: baseline;
+  background: linear-gradient(180deg, #3b352e, #262119);
+  color: #e8ddc0; padding: 4px 10px; font-size: 9.5px;
+  letter-spacing: .8px; text-transform: uppercase;
+  border-top: 2px solid var(--gold);
+}
+.kwbar.fac { background: linear-gradient(180deg, #56431d, #3a2d12); border-top: 1px solid #d9b45c; }
+.kwbar .lbl { flex: 0 0 auto; font-family: var(--serif); color: var(--gold-bright); font-weight: 700; font-size: 9px; }
+.kwbar .vals { line-height: 1.6; }
+
+.card-foot {
+  display: flex; justify-content: space-between; gap: 10px;
+  padding: 3px 10px 5px; font-size: 9.5px; color: #6b5d3d;
+  letter-spacing: .5px;
+}
+
+/* Speciale kaarttypes */
+.card.overview .card-head h2 { font-size: 19px; }
+.regiments { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; padding: 4px 0; }
+.reg { border: 1px solid #b3a274; border-radius: 3px; background: rgba(255,255,255,.4); break-inside: avoid; }
+.reg h3 {
+  font-family: var(--serif); font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase;
+  background: linear-gradient(180deg, #d9cdac, #c9b98d); color: #453a20;
+  padding: 3px 8px; border-bottom: 1px solid #a89467;
+}
+.reg ul { list-style: none; padding: 4px 8px 5px; }
+.reg li { padding: 1px 0; font-size: 11px; }
+.reg li .upts { color: #6b5d3d; font-size: 10px; }
+.reg li.enh { padding-left: 14px; font-size: 10px; color: #6b5d3d; font-style: italic; }
+.reg li .genstar { color: var(--crimson); font-weight: 700; }
+.ov-meta { display: flex; flex-wrap: wrap; gap: 5px 14px; padding: 2px 0 7px; font-size: 11px; }
+.ov-meta b { font-family: var(--serif); letter-spacing: .5px; }
+.ov-meta .chip {
+  background: #e5d9ba; border: 1px solid #b3a274; border-radius: 10px;
+  padding: 1px 9px; font-size: 10.5px;
+}
+
+.card.placeholder { border-style: dashed; border-color: var(--crimson); }
+.card.placeholder .missing {
+  padding: 8px 0; color: #7a2a22; font-size: 11px; font-style: italic;
+}
+.write-lines { border-bottom: 1px solid #b3a274; height: 22px; margin: 0 0 4px; }
+
+.section-break {
+  break-inside: avoid; column-span: all;
+  font-family: var(--serif); text-transform: uppercase; letter-spacing: 3px;
+  color: var(--gold-bright); font-size: 13px; text-align: center;
+  margin: 4mm 0 5mm; display: flex; align-items: center; gap: 12px;
+}
+.section-break::before, .section-break::after { content: ''; flex: 1; border-top: 1px solid var(--gold-dim); }
+
+/* ---------- Print ---------- */
+/* De @page-regel (A4 of A6) wordt door js/app.js gezet op basis van het gekozen formaat. */
+@media print {
+  body { background: #fff; }
+  .no-print, .topbar, .panel { display: none !important; }
+  main { display: block; }
+  #cardsWrap { padding: 0; }
+  .cards.size-l, .cards.size-s { max-width: none; margin: 0; }
+  .card { box-shadow: none; }
+  .card.excluded { display: none; }
+  .cards.size-a6 { display: block; }
+  .cards.size-a6 .card { page-break-after: always; break-after: page; border-radius: 0; }
+  .cards.size-a6 .card:last-child { page-break-after: auto; break-after: auto; }
+  .cards.size-a6 .section-break { display: none; }
+  .section-break { color: #6e5622; }
+  .section-break::before, .section-break::after { border-color: #a89467; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

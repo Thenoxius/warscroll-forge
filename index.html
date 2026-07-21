@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Warscroll Forge — AoS referentiekaarten</title>
+<link rel="stylesheet" href="css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚒️</text></svg>">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-offensive" viewBox="0 0 24 24"><path d="M4 3l6 1 9 9-2 2-9-9-1-6zm13 12l4 4-2 2-4-4 2-2zM7 14l3 3-4 4-3-3 4-4z"/></symbol>
+    <symbol id="i-defensive" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3z"/></symbol>
+    <symbol id="i-special" viewBox="0 0 24 24"><path d="M12 1l2.6 7.4L22 11l-7.4 2.6L12 21l-2.6-7.4L2 11l7.4-2.6L12 1z"/></symbol>
+    <symbol id="i-control" viewBox="0 0 24 24"><path d="M5 2h2v20H5V2zm4 2h10l-3 4 3 4H9V4z"/></symbol>
+    <symbol id="i-movement" viewBox="0 0 24 24"><path d="M3 12h13m-5-6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3"/></symbol>
+    <symbol id="i-shooting" viewBox="0 0 24 24"><path d="M2 22l7-2-5-5-2 7zM9 15L20 4h-4l2-2h6v6l-2 2V6L11 17l-2-2z"/></symbol>
+    <symbol id="i-rallying" viewBox="0 0 24 24"><path d="M12 3a5 5 0 015 5c0 3-2 4-2 6H9c0-2-2-3-2-6a5 5 0 015-5zm-3 13h6v2H9v-2zm1 3h4v2h-4v-2z"/></symbol>
+    <symbol id="i-damage" viewBox="0 0 24 24"><path d="M13 2L4 14h5l-2 8 9-12h-5l2-8z"/></symbol>
+  </defs>
+</svg>
+
+<header class="topbar no-print">
+  <div class="brand">
+    <span class="brand-mark">⚒</span>
+    <div>
+      <h1>Warscroll Forge</h1>
+      <p class="tagline">Age of Sigmar-lijst &rarr; printbare referentiekaarten</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <span id="dataVersion" class="data-version"></span>
+    <button id="btnPrint" class="btn btn-gold" title="Afdrukken (Ctrl+P)">🖨 Afdrukken</button>
+  </div>
+</header>
+
+<main>
+  <aside class="panel no-print">
+    <label class="panel-label" for="listInput">Legerlijst (export uit de officiële AoS-app)</label>
+    <textarea id="listInput" spellcheck="false"
+      placeholder="Plak hier je geëxporteerde legerlijst…&#10;&#10;Grand Alliance Chaos | Hedonites of Slaanesh | …&#10;-----&#10;General's Regiment&#10;Sigvald, Prince of Slaanesh (240)&#10;• General&#10;…"></textarea>
+    <div class="btn-row">
+      <button id="btnGenerate" class="btn btn-gold">⚔ Maak kaarten</button>
+      <button id="btnSample" class="btn btn-ghost">Voorbeeldlijst</button>
+    </div>
+
+    <fieldset class="options">
+      <legend>Opties</legend>
+      <div class="opt-row">
+        <span class="opt-name">Formaat</span>
+        <div class="seg" role="group">
+          <button id="sizeL" class="seg-btn active">Groot</button>
+          <button id="sizeS" class="seg-btn">Compact</button>
+          <button id="sizeA6" class="seg-btn">A6-kaarten</button>
+        </div>
+      </div>
+      <p id="a6Hint" class="hint" hidden>A6-modus: elke kaart is precies 105 × 148 mm en print als eigen pagina.
+      Print direct op A6-(kaart)papier, of kies in het printvenster A4 met <b>4 pagina's per vel</b> voor een 2×2-vel om te snijden.</p>
+      <label class="opt-row"><input type="checkbox" id="optFlavour"> <span>Flavourtekst op kaarten</span></label>
+      <label class="opt-row"><input type="checkbox" id="optOverview" checked> <span>Leger-overzichtskaart</span></label>
+      <label class="opt-row"><input type="checkbox" id="optTraits" checked> <span>Battle traits &amp; formation</span></label>
+      <label class="opt-row"><input type="checkbox" id="optLores" checked> <span>Lores &amp; manifestaties</span></label>
+    </fieldset>
+
+    <fieldset class="options">
+      <legend>Extra kaart</legend>
+      <div class="add-row">
+        <input id="addUnit" list="allUnits" placeholder="Zoek een warscroll…">
+        <button id="btnAdd" class="btn btn-ghost">+</button>
+      </div>
+      <datalist id="allUnits"></datalist>
+    </fieldset>
+
+    <div id="status" class="status"></div>
+    <p class="hint">Tip: klik op een kaartkop om die kaart bij het afdrukken over te slaan.</p>
+    <p class="credits">Regeldata: powered by <a href="https://wahapedia.ru/aos4/the-rules/data-export/" style="color:inherit">Wahapedia</a> (lokaal opgeslagen). Punten komen uit je geplakte lijst.</p>
+  </aside>
+
+  <section id="cardsWrap">
+    <div id="cards" class="cards size-l"></div>
+  </section>
+</main>
+
+<script src="data/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

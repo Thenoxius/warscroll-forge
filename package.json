@@ -1,0 +1,11 @@
+{
+  "name": "warscroll-forge",
+  "version": "1.0.0",
+  "description": "Zet geëxporteerde Age of Sigmar-legerlijsten om naar printbare referentiekaarten (volledig lokaal).",
+  "private": true,
+  "scripts": {
+    "update-data": "node scripts/update-data.mjs",
+    "compile-data": "node scripts/update-data.mjs --offline",
+    "serve": "python -m http.server 8317"
+  }
+}
