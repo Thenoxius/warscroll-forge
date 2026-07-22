@@ -178,9 +178,11 @@ function abilityBlock(a, tag) {
   if (tag) chip += `<span class="tag">${esc(tag)}</span>`;
   const legend = optFlavour() && a.legend ? `<div class="legend">${esc(a.legend)}</div>` : '';
   return `<div class="ab" style="--ph: var(--ph-${key})">
-    <div class="ab-head"><span class="cond">${esc(cond)}${a.reaction ? ' — Reaction' : ''}</span>
-      ${icon ? `<span class="icons"><svg><use href="#${icon}"/></svg></span>` : ''}</div>
-    <div class="ab-name">${esc(a.name)}${chip}</div>
+    <div class="ab-head">
+      <div class="ab-head-top"><span class="cond">${esc(cond)}${a.reaction ? ' — Reaction' : ''}</span>
+        ${icon ? `<span class="icons"><svg><use href="#${icon}"/></svg></span>` : ''}</div>
+      <div class="ab-title">${esc(a.name)}${chip}</div>
+    </div>
     <div class="ab-body">${legend}${a.desc || ''}</div>
     ${a.kw ? `<div class="ab-kw">Keywords: ${esc(a.kw)}</div>` : ''}
   </div>`;
@@ -261,12 +263,14 @@ function unitCard(w, ctx = {}) {
   if (ctx.reinforced) chips.push('Versterkt ×2');
   if (ctx.tag) chips.push(ctx.tag);
   const subtitleBits = [D.factions[w.fid] || '', w.role, chips.join(' · ')].filter(Boolean);
-  const legend = optFlavour() && w.legend ? `<div class="ab-body legend" style="padding:2px 2px 6px;font-style:italic;color:#6b5d3d;font-size:10.5px">${esc(w.legend)}</div>` : '';
+  const legend = optFlavour() && w.legend ? `<div class="ab-body legend" style="padding:2px 2px 6px;font-style:italic;color:#5c5a52;font-size:10.5px">${esc(w.legend)}</div>` : '';
 
   const enh = (ctx.enhancements || []).map(e => {
     if (e.fab) return abilityBlock(e.fab, e.fab.typeName || 'Enhancement');
-    return `<div class="ab" style="--ph: var(--ph-passive)"><div class="ab-head"><span class="cond">Enhancement</span></div>
-      <div class="ab-name">${esc(e.name)}</div>
+    return `<div class="ab" style="--ph: var(--ph-passive)"><div class="ab-head">
+        <div class="ab-head-top"><span class="cond">Enhancement</span></div>
+        <div class="ab-title">${esc(e.name)}</div>
+      </div>
       <div class="ab-body missing" style="font-style:italic;color:#7a2a22">Regels niet gevonden in de lokale data — noteer zelf:</div>
       <div class="ab-body"><div class="write-lines"></div><div class="write-lines"></div></div></div>`;
   }).join('');

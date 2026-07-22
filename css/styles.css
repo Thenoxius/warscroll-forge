@@ -5,25 +5,27 @@
   --bg: #191613;
   --bg-panel: #241f1a;
   --bg-panel-2: #2d2721;
-  --ink: #24201b;
-  --parchment: #f3ecdc;
-  --parchment-dark: #e9dfc8;
+  --ink: #101010;
+  --parchment: #f7f5ee;
+  --parchment-dark: #efece1;
   --gold: #b8933d;
   --gold-bright: #d9b45c;
   --gold-dim: #8a6d2c;
-  --crimson: #8f1f1f;
+  --crimson: #9b2f31;
   --text-dim: #b3a68d;
-  --head-grad: linear-gradient(175deg, #3b352e 0%, #262119 70%, #1d1914 100%);
-  /* fasekleuren (AoS 4e) */
-  --ph-passive: #3f3b38;
-  --ph-start: #4a5560;
-  --ph-hero: #a3841c;
-  --ph-movement: #75716c;
-  --ph-shooting: #1b6672;
-  --ph-charge: #c26e1d;
-  --ph-combat: #9e2820;
-  --ph-end: #6d4f93;
-  --ph-defensive: #2e6e46;
+  --card-black: #1d1d1b;
+  --card-rule: #c9c5b8;
+  --head-grad: linear-gradient(180deg, #262624, #161614);
+  /* fasekleuren — officiële AoS 4e kaartkleuren */
+  --ph-passive: #1d1d1b;
+  --ph-start: #4a4f54;
+  --ph-hero: #927736;
+  --ph-movement: #848786;
+  --ph-shooting: #375b7c;
+  --ph-charge: #a34d14;
+  --ph-combat: #9b2f31;
+  --ph-end: #5e4a79;
+  --ph-defensive: #46555f;
   --serif: 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif;
   --sans: 'Segoe UI', Tahoma, Arial, sans-serif;
 }
@@ -163,13 +165,9 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
 /* ---------- Kaart ---------- */
 .card {
   break-inside: avoid;
-  background:
-    linear-gradient(160deg, rgba(255,255,255,.35), rgba(255,255,255,0) 30%),
-    radial-gradient(ellipse at 80% 110%, var(--parchment-dark), var(--parchment) 60%);
+  background: var(--parchment);
   color: var(--ink);
-  border: 1px solid #9a8a63;
-  outline: 1px solid #d8cdb2;
-  outline-offset: -3px;
+  border: 1.5px solid #232320;
   border-radius: 5px;
   margin: 0 0 8mm 0;
   box-shadow: 0 3px 10px rgba(0,0,0,.45);
@@ -188,9 +186,9 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
   position: relative;
   display: flex; align-items: center; gap: 12px;
   background: var(--head-grad);
-  border-bottom: 2px solid var(--gold);
+  border-bottom: 2px solid #9c8446;
   padding: 8px 12px;
-  color: #f0e6cf;
+  color: #f2f0e9;
   cursor: pointer;
   min-height: 58px;
 }
@@ -198,23 +196,22 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
 .card-head h2 {
   font-family: var(--serif); font-weight: 700; font-size: 17px;
   letter-spacing: 1.2px; text-transform: uppercase;
-  color: var(--gold-bright);
-  text-shadow: 0 1px 2px #000;
+  color: #ffffff;
   line-height: 1.15;
 }
 .card-head .subtitle {
   font-size: 10.5px; letter-spacing: 1.5px; text-transform: uppercase;
-  color: #cfc3a4; margin-top: 3px;
+  color: #b9b9b4; margin-top: 3px;
 }
 .pts {
   flex: 0 0 auto; text-align: center;
-  border: 1.5px solid var(--gold); border-radius: 50%;
+  border: 1.5px solid #e8e6df; border-radius: 50%;
   width: 46px; height: 46px;
   display: grid; place-content: center;
-  background: radial-gradient(circle at 35% 30%, #45403a, #211d18);
+  background: #101010;
 }
 .pts b { font-size: 15px; color: #fff; line-height: 1; }
-.pts span { font-size: 8px; letter-spacing: 1px; color: var(--gold-bright); text-transform: uppercase; }
+.pts span { font-size: 8px; letter-spacing: 1px; color: #d5d3ca; text-transform: uppercase; }
 .count-badge {
   position: absolute; top: -1px; left: -1px;
   background: var(--crimson); color: #fff;
@@ -226,24 +223,24 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
 .stats { flex: 0 0 auto; position: relative; width: 104px; height: 104px; margin: 2px 0; }
 .stat {
   position: absolute; width: 44px; height: 44px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 28%, #4a443c, #16130f 75%);
-  border: 1.5px solid var(--gold);
+  background: #f4f2ea;
+  border: 2px solid #101010;
   display: grid; place-content: center; text-align: center;
-  box-shadow: 0 1px 4px rgba(0,0,0,.6);
+  box-shadow: 0 1px 4px rgba(0,0,0,.55);
 }
-.stat b { font-size: 14px; color: #fff; line-height: 1.05; }
-.stat span { font-size: 6.5px; letter-spacing: .8px; color: var(--gold-bright); text-transform: uppercase; }
+.stat b { font-size: 14px; color: #101010; line-height: 1.05; }
+.stat span { font-size: 6.5px; letter-spacing: .8px; color: #4a4a45; text-transform: uppercase; }
 .stat.move    { top: 0;    left: 30px; }
 .stat.save    { top: 30px; left: 60px; }
 .stat.control { top: 60px; left: 30px; }
 .stat.health  { top: 30px; left: 0; }
 .stat.ward {
   width: 34px; height: 34px; top: 35px; left: 35px; z-index: 1;
-  background: radial-gradient(circle at 35% 28%, #6e5622, #2c2210 75%);
-  border-color: #e6c886;
+  background: #101010;
+  border-color: #f4f2ea;
 }
-.stat.ward b { font-size: 11px; }
-.stat.ward span { font-size: 5.5px; }
+.stat.ward b { font-size: 11px; color: #fff; }
+.stat.ward span { font-size: 5.5px; color: #cfcfca; }
 .stats.no-ward .stat.move    { top: 0;    left: 30px; }
 
 /* Body */
@@ -254,22 +251,22 @@ table.weapons { width: 100%; border-collapse: collapse; margin-bottom: 7px; }
 .weapons caption {
   text-align: left; font-family: var(--serif); font-weight: 700;
   font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
-  color: #fff; background: linear-gradient(180deg, #4a4238, #2b2620);
-  padding: 3px 8px; border-left: 3px solid var(--gold);
+  color: #fff; background: var(--card-black);
+  padding: 3px 8px;
 }
 .weapons th {
   font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
-  background: #d9cdac; color: #4a4128; padding: 2px 4px;
-  border-bottom: 1px solid #a89467;
+  background: #e3e0d4; color: #3c3a33; padding: 2px 4px;
+  border-bottom: 1px solid #101010;
 }
 .weapons th:first-child { text-align: left; padding-left: 8px; }
 .weapons td {
   text-align: center; padding: 3px 4px; font-size: 11.5px; font-weight: 600;
-  border-bottom: 1px solid #cfc2a0;
+  border-bottom: 1px solid var(--card-rule);
 }
 .weapons td.wname { text-align: left; font-weight: 600; padding-left: 8px; width: 42%; }
-.weapons .wab { display: block; font-weight: 400; font-style: italic; font-size: 10px; color: #6b5d3d; }
-.weapons tr:nth-child(even) td { background: rgba(190,172,128,.14); }
+.weapons .wab { display: block; font-weight: 400; font-style: italic; font-size: 10px; color: #6a675c; }
+.weapons tr:nth-child(even) td { background: rgba(0,0,0,.035); }
 
 /* Ability-blokken */
 .abilities { columns: 1; }
@@ -279,76 +276,76 @@ table.weapons { width: 100%; border-collapse: collapse; margin-bottom: 7px; }
   border: 1px solid var(--ph, var(--ph-passive));
   border-left-width: 4px;
   border-radius: 3px;
-  background: rgba(255,255,255,.55);
+  background: #fdfdfa;
   margin-bottom: 7px;
   overflow: hidden;
 }
 .ab-head {
   background: var(--ph, var(--ph-passive));
-  color: #fff; padding: 3px 8px 4px;
-  display: flex; align-items: baseline; gap: 8px;
+  color: #fff; padding: 3px 8px 5px;
 }
+.ab-head-top { display: flex; align-items: center; gap: 8px; }
 .ab-head .cond {
-  font-size: 9px; letter-spacing: 1px; text-transform: uppercase; opacity: .9;
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase; opacity: .95;
   flex: 1;
 }
-.ab-head .icons { display: flex; gap: 4px; align-self: center; }
+.ab-head .icons { display: flex; gap: 4px; }
 .ab-head svg { width: 12px; height: 12px; fill: #fff; }
-.ab-name {
+.ab-title {
   font-family: var(--serif); font-weight: 700; font-size: 12.5px;
-  letter-spacing: .8px; text-transform: uppercase;
-  padding: 4px 8px 0; color: var(--ph, var(--ph-passive));
+  letter-spacing: .8px; text-transform: uppercase; color: #fff;
+  margin-top: 1px; line-height: 1.2;
 }
-.ab-name .tag {
+.ab-title .tag {
   font-family: var(--sans); font-size: 8.5px; font-weight: 700; letter-spacing: 1px;
-  background: var(--gold); color: #241d0e; border-radius: 2px;
-  padding: 1px 5px; vertical-align: 2px; margin-left: 6px;
+  background: #fff; color: #101010; border-radius: 2px;
+  padding: 1px 5px; vertical-align: 1px; margin-left: 6px;
 }
-.ab-body { padding: 2px 8px 6px; font-size: 11.5px; }
-.ab-body .legend { font-style: italic; color: #6b5d3d; font-size: 10.5px; margin-bottom: 3px; }
+.ab-body { padding: 5px 8px 6px; font-size: 11.5px; }
+.ab-body .legend { font-style: italic; color: #5c5a52; font-size: 10.5px; margin-bottom: 3px; }
 .ab-kw {
   border-top: 1px solid var(--ph, var(--ph-passive));
   font-size: 9px; letter-spacing: .8px; text-transform: uppercase;
-  padding: 2px 8px; color: var(--ph, var(--ph-passive)); background: rgba(0,0,0,.04);
+  padding: 2px 8px; color: var(--ph, var(--ph-passive)); background: rgba(0,0,0,.05);
 }
 .kw { font-weight: 700; text-transform: uppercase; font-size: .92em; letter-spacing: .3px; }
 
 /* Keywordbalken */
 .kwbar {
   display: flex; gap: 8px; align-items: baseline;
-  background: linear-gradient(180deg, #3b352e, #262119);
-  color: #e8ddc0; padding: 4px 10px; font-size: 9.5px;
+  background: var(--card-black);
+  color: #f2f0e9; padding: 4px 10px; font-size: 9.5px;
   letter-spacing: .8px; text-transform: uppercase;
-  border-top: 2px solid var(--gold);
+  border-top: 2px solid #101010;
 }
-.kwbar.fac { background: linear-gradient(180deg, #56431d, #3a2d12); border-top: 1px solid #d9b45c; }
-.kwbar .lbl { flex: 0 0 auto; font-family: var(--serif); color: var(--gold-bright); font-weight: 700; font-size: 9px; }
+.kwbar.fac { background: #3a3a37; border-top: 1px solid #55554f; }
+.kwbar .lbl { flex: 0 0 auto; font-family: var(--serif); color: #b9b9b4; font-weight: 700; font-size: 9px; }
 .kwbar .vals { line-height: 1.6; }
 
 .card-foot {
   display: flex; justify-content: space-between; gap: 10px;
-  padding: 3px 10px 5px; font-size: 9.5px; color: #6b5d3d;
+  padding: 3px 10px 5px; font-size: 9.5px; color: #55534a;
   letter-spacing: .5px;
 }
 
 /* Speciale kaarttypes */
 .card.overview .card-head h2 { font-size: 19px; }
 .regiments { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; padding: 4px 0; }
-.reg { border: 1px solid #b3a274; border-radius: 3px; background: rgba(255,255,255,.4); break-inside: avoid; }
+.reg { border: 1px solid var(--card-rule); border-radius: 3px; background: #fdfdfa; break-inside: avoid; }
 .reg h3 {
   font-family: var(--serif); font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase;
-  background: linear-gradient(180deg, #d9cdac, #c9b98d); color: #453a20;
-  padding: 3px 8px; border-bottom: 1px solid #a89467;
+  background: #e3e0d4; color: #26251f;
+  padding: 3px 8px; border-bottom: 1px solid #101010;
 }
 .reg ul { list-style: none; padding: 4px 8px 5px; }
 .reg li { padding: 1px 0; font-size: 11px; }
-.reg li .upts { color: #6b5d3d; font-size: 10px; }
-.reg li.enh { padding-left: 14px; font-size: 10px; color: #6b5d3d; font-style: italic; }
+.reg li .upts { color: #6a675c; font-size: 10px; }
+.reg li.enh { padding-left: 14px; font-size: 10px; color: #6a675c; font-style: italic; }
 .reg li .genstar { color: var(--crimson); font-weight: 700; }
 .ov-meta { display: flex; flex-wrap: wrap; gap: 5px 14px; padding: 2px 0 7px; font-size: 11px; }
 .ov-meta b { font-family: var(--serif); letter-spacing: .5px; }
 .ov-meta .chip {
-  background: #e5d9ba; border: 1px solid #b3a274; border-radius: 10px;
+  background: #eceadf; border: 1px solid var(--card-rule); border-radius: 10px;
   padding: 1px 9px; font-size: 10.5px;
 }
 
@@ -356,7 +353,7 @@ table.weapons { width: 100%; border-collapse: collapse; margin-bottom: 7px; }
 .card.placeholder .missing {
   padding: 8px 0; color: #7a2a22; font-size: 11px; font-style: italic;
 }
-.write-lines { border-bottom: 1px solid #b3a274; height: 22px; margin: 0 0 4px; }
+.write-lines { border-bottom: 1px solid #b9b5a6; height: 22px; margin: 0 0 4px; }
 
 .section-break {
   break-inside: avoid; column-span: all;
