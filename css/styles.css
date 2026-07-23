@@ -1,5 +1,7 @@
 /* ============ Warscroll Forge — Age of Sigmar stijl ============ */
 * { box-sizing: border-box; margin: 0; padding: 0; }
+/* moet display:flex/grid van eigen regels verslaan */
+[hidden] { display: none !important; }
 
 :root {
   --bg: #191613;
@@ -135,9 +137,18 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
 .lang-toggle { display: flex; border: 1px solid var(--gold-dim); border-radius: 4px; overflow: hidden; }
 .lang-btn { background: transparent; color: var(--text-dim); border: 0; cursor: pointer; padding: 4px 9px; font-size: 11px; font-weight: 600; }
 .lang-btn.active { background: var(--gold); color: #201a0e; }
-.back-opts { flex-wrap: wrap; }
-.back-opts input[type=color] { width: 36px; height: 26px; border: 1px solid #453b2c; background: #17140f; border-radius: 4px; padding: 1px; }
+.back-panel { border-left: 2px solid var(--gold-dim); margin: 2px 0 4px 6px; padding-left: 8px; }
+.back-opts { flex-wrap: wrap; gap: 6px; }
+.back-opts input[type=color] { width: 36px; height: 26px; border: 1px solid #453b2c; background: #17140f; border-radius: 4px; padding: 1px; cursor: pointer; }
 .back-opts input[type=file] { flex: 1; min-width: 0; font-size: 11px; color: var(--text-dim); }
+.back-opts select {
+  flex: 1; min-width: 0; background: #17140f; color: #ded5bf;
+  border: 1px solid #453b2c; border-radius: 4px; padding: 5px 7px; font-size: 12px;
+}
+.back-opts input[type=range] { flex: 1; min-width: 70px; accent-color: var(--gold); }
+.back-opts .scale-val { font-size: 11px; color: var(--text-dim); min-width: 34px; text-align: right; }
+.back-opts .tilelbl { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-dim); cursor: pointer; }
+.back-opts .tilelbl input { accent-color: var(--gold); width: 14px; height: 14px; }
 .status { margin-top: 12px; font-size: 12px; line-height: 1.5; }
 .status .ok { color: #9dc08b; }
 .status .warn { color: #e0a640; }
@@ -167,17 +178,71 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
 .cards.size-a6 .kwband, .cards.size-a6 .card-foot { flex: 0 0 auto; }
 .fitbox { transform-origin: top left; }
 .fitbox.two-col .abilities { columns: 2; column-gap: 8px; }
-/* Achterkant voor dubbelzijdig printen */
+/* Achterkant voor dubbelzijdig printen: kleur + motief (element-bg) + afbeelding (::before) + rand (::after) */
 .cardback {
   width: 105mm; height: 148mm; position: relative;
   border: 1.5px solid #232320; border-radius: 5px; overflow: hidden;
   background-color: var(--back-color, #262b3a);
-  background-size: cover; background-position: center;
+  background-repeat: repeat; background-position: center;
+}
+/* geüploade afbeelding — bovenop het motief, schaalbaar */
+.cardback::before {
+  content: ''; position: absolute; inset: 0; z-index: 1;
+  background-image: var(--back-img, none);
+  background-repeat: var(--back-img-repeat, no-repeat);
+  background-size: var(--back-img-size, cover);
+  background-position: center;
+  pointer-events: none;
 }
 .cardback::after {
-  content: ''; position: absolute; inset: 4mm;
+  content: ''; position: absolute; inset: 4mm; z-index: 2;
   border: 1px solid rgba(244,242,234,.6); border-radius: 3mm;
   pointer-events: none;
+}
+/* Motieven — getekend in de 2e kleur over de basiskleur */
+.cardback.pat-stripes {
+  background-image: repeating-linear-gradient(45deg, var(--back-color2) 0 6px, transparent 6px 18px);
+}
+.cardback.pat-dots {
+  background-image: radial-gradient(var(--back-color2) 16%, transparent 17%);
+  background-size: 16px 16px;
+}
+.cardback.pat-grid {
+  background-image:
+    linear-gradient(var(--back-color2) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, var(--back-color2) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+.cardback.pat-crosshatch {
+  background-image:
+    repeating-linear-gradient(45deg, var(--back-color2) 0 1.5px, transparent 1.5px 13px),
+    repeating-linear-gradient(-45deg, var(--back-color2) 0 1.5px, transparent 1.5px 13px);
+}
+.cardback.pat-chevron {
+  background-image:
+    linear-gradient(135deg, var(--back-color2) 25%, transparent 25%),
+    linear-gradient(225deg, var(--back-color2) 25%, transparent 25%),
+    linear-gradient(45deg, var(--back-color2) 25%, transparent 25%),
+    linear-gradient(315deg, var(--back-color2) 25%, transparent 25%);
+  background-position: 12px 0, 12px 0, 0 0, 0 0;
+  background-size: 24px 24px;
+}
+/* Schubben: twee halfsteens verspringende rijen bogen (dakpan-effect) */
+.cardback.pat-scales {
+  background-image:
+    radial-gradient(circle at 50% 100%, transparent 47%, var(--back-color2) 48% 52%, transparent 53%),
+    radial-gradient(circle at 50% 100%, transparent 47%, var(--back-color2) 48% 52%, transparent 53%);
+  background-position: 0 0, 13px 7px;
+  background-size: 26px 14px;
+}
+/* Ruiten: vier hoekdriehoeken vormen samen een ruitenlattice (argyle) */
+.cardback.pat-diamonds {
+  background-image:
+    linear-gradient(45deg, var(--back-color2) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--back-color2) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--back-color2) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--back-color2) 75%);
+  background-size: 26px 26px;
 }
 .cards:empty::after {
   content: 'Plak links je legerlijst en klik op “Maak kaarten”.';

@@ -549,8 +549,30 @@ function buildFactionPack(fid) {
 const backOpts = {
   on: localStorage.getItem('wsf.backs') === '1',
   color: localStorage.getItem('wsf.backColor') || '#262b3a',
+  color2: localStorage.getItem('wsf.backColor2') || '#c9a24b',
+  pattern: localStorage.getItem('wsf.backPattern') || 'solid',
+  scale: +localStorage.getItem('wsf.backScale') || 100,
+  tile: localStorage.getItem('wsf.backTile') === '1',
   image: null, // dataURL — alleen deze sessie
 };
+
+/* Zet kleuren, motief en (geschaalde) afbeelding op één achterkant. */
+function styleBack(b) {
+  for (const c of [...b.classList]) if (c.startsWith('pat-')) b.classList.remove(c);
+  b.classList.add('pat-' + backOpts.pattern);
+  b.style.setProperty('--back-color', backOpts.color);
+  b.style.setProperty('--back-color2', backOpts.color2);
+  if (backOpts.image) {
+    b.style.setProperty('--back-img', `url("${backOpts.image}")`);
+    b.style.setProperty('--back-img-repeat', backOpts.tile ? 'repeat' : 'no-repeat');
+    // 100% zonder tegelen = vullend (cover); anders percentage van de kaartbreedte
+    b.style.setProperty('--back-img-size',
+      (!backOpts.tile && backOpts.scale === 100) ? 'cover' : backOpts.scale + '%');
+  } else {
+    b.style.removeProperty('--back-img');
+  }
+}
+const refreshBacks = () => document.querySelectorAll('.cardback').forEach(styleBack);
 function buildSheets() {
   const cards = $('#cards');
   // eerst bestaande vellen uitpakken
@@ -578,8 +600,7 @@ function buildSheets() {
         // gespiegeld voor dubbelzijdig printen (omslaan over de lange zijde)
         b.style.gridRow = String(i < 2 ? 1 : 2);
         b.style.gridColumn = String(i % 2 === 0 ? 2 : 1);
-        b.style.setProperty('--back-color', backOpts.color);
-        if (backOpts.image) b.style.backgroundImage = `url(${backOpts.image})`;
+        styleBack(b);
         back.appendChild(b);
       });
       sheet.after(back);
@@ -682,19 +703,47 @@ $('#btnPack').addEventListener('click', () => { const fid = $('#packFaction').va
 $('#optBacks').addEventListener('change', e => {
   backOpts.on = e.target.checked;
   localStorage.setItem('wsf.backs', backOpts.on ? '1' : '0');
+  $('#backPanel').hidden = !backOpts.on;
   buildSheets(); fitA6();
 });
 $('#backColor').addEventListener('input', e => {
   backOpts.color = e.target.value;
   localStorage.setItem('wsf.backColor', backOpts.color);
-  for (const b of document.querySelectorAll('.cardback')) b.style.setProperty('--back-color', backOpts.color);
+  refreshBacks();
+});
+$('#backColor2').addEventListener('input', e => {
+  backOpts.color2 = e.target.value;
+  localStorage.setItem('wsf.backColor2', backOpts.color2);
+  refreshBacks();
+});
+$('#backPattern').addEventListener('change', e => {
+  backOpts.pattern = e.target.value;
+  localStorage.setItem('wsf.backPattern', backOpts.pattern);
+  refreshBacks();
+});
+$('#backScale').addEventListener('input', e => {
+  backOpts.scale = +e.target.value;
+  localStorage.setItem('wsf.backScale', String(backOpts.scale));
+  $('#backScaleVal').textContent = backOpts.scale + '%';
+  refreshBacks();
+});
+$('#backTile').addEventListener('change', e => {
+  backOpts.tile = e.target.checked;
+  localStorage.setItem('wsf.backTile', backOpts.tile ? '1' : '0');
+  refreshBacks();
 });
 $('#backImage').addEventListener('change', e => {
   const f = e.target.files[0];
-  if (!f) { backOpts.image = null; buildSheets(); fitA6(); return; }
+  if (!f) { backOpts.image = null; $('#imgScaleRow').hidden = true; refreshBacks(); return; }
   const r = new FileReader();
-  r.onload = () => { backOpts.image = r.result; buildSheets(); fitA6(); };
+  r.onload = () => { backOpts.image = r.result; $('#imgScaleRow').hidden = false; refreshBacks(); };
   r.readAsDataURL(f);
+});
+$('#btnBackImgClear').addEventListener('click', () => {
+  backOpts.image = null;
+  $('#backImage').value = '';
+  $('#imgScaleRow').hidden = true;
+  refreshBacks();
 });
 
 /* taal */
@@ -721,7 +770,13 @@ $('#packFaction').innerHTML = '<option value=""></option>' + Object.entries(D.fa
   .sort((a, b) => a[1].localeCompare(b[1]))
   .map(([id, name]) => `<option value="${esc(id)}">${esc(name)}</option>`).join('');
 $('#optBacks').checked = backOpts.on;
+$('#backPanel').hidden = !backOpts.on;
 $('#backColor').value = backOpts.color;
+$('#backColor2').value = backOpts.color2;
+$('#backPattern').value = backOpts.pattern;
+$('#backScale').value = String(backOpts.scale);
+$('#backScaleVal').textContent = backOpts.scale + '%';
+$('#backTile').checked = backOpts.tile;
 $('#lang' + LANG.toUpperCase()).classList.add('active');
 
 /* Engelse UI-teksten (NL staat in de HTML) */
@@ -737,7 +792,8 @@ if (LANG === 'en') {
     lblFlavour: 'Flavour text on cards', lblOverview: 'Army overview card',
     lblTraits: 'Battle traits & formation', lblLores: 'Lores & manifestations',
     lblBacks: 'Card backs (double-sided printing)', lblBackColor: 'Colour', lblBackImage: 'Image',
-    backsHint: 'Backs only work in A6 mode: behind every sheet of 4 fronts comes a mirrored sheet of backs. Print double-sided, flip on the long edge. The image is kept for this session only.',
+    lblBackColor2: '2nd colour', lblBackPattern: 'Pattern', lblBackScale: 'Size', lblBackTile: 'tile',
+    backsHint: 'Backs only work in A6 mode: behind every sheet of 4 fronts comes a mirrored sheet of backs. Print double-sided, flip on the long edge. Pick a pattern in two colours, and/or your own image scaled with the slider (tiling turns it into a repeating pattern). The image is kept for this session only.',
     packLegend: 'Faction pack', btnPack: 'Generate all faction warscrolls',
     extraLegend: 'Extra card',
     hintExclude: 'Tip: click a card header to skip that card when printing.',
@@ -747,6 +803,11 @@ if (LANG === 'en') {
   $('#listInput').placeholder = 'Paste your exported army list here…\n\nGrand Alliance Chaos | Hedonites of Slaanesh | …\n-----\nGeneral’s Regiment\nSigvald, Prince of Slaanesh (240)\n• General\n…';
   $('#addUnit').placeholder = 'Search a warscroll…';
   $('#packFaction').firstElementChild.textContent = '';
+  const EN_PAT = {
+    solid: 'Solid', stripes: 'Diagonal stripes', dots: 'Dots', grid: 'Grid',
+    crosshatch: 'Crosshatch', chevron: 'Chevron', scales: 'Scales', diamonds: 'Diamonds',
+  };
+  for (const o of $('#backPattern').options) if (EN_PAT[o.value]) o.textContent = EN_PAT[o.value];
 }
 
 const savedList = localStorage.getItem('wsf.list');
@@ -755,9 +816,11 @@ for (const id of ['optFlavour', 'optOverview', 'optTraits', 'optLores']) {
   const v = localStorage.getItem('wsf.' + id);
   if (v !== null) $('#' + id).checked = v === '1';
 }
-/* URL-parameters: ?size=l|s|a6 en ?demo=1 (voorbeeldlijst laden) */
+/* URL-parameters: ?size=l|s|a6, ?demo=1, ?backs=1, ?pattern=… */
 const qp = new URLSearchParams(location.search);
 if (qp.get('size')) setSize(qp.get('size'));
+if (qp.get('pattern')) { backOpts.pattern = qp.get('pattern'); $('#backPattern').value = backOpts.pattern; }
+if (qp.get('backs') === '1') { backOpts.on = true; $('#optBacks').checked = true; $('#backPanel').hidden = false; }
 if (qp.get('demo') === '1') { $('#listInput').value = SAMPLE; generate(); }
 else if (savedList) generate();
 })();

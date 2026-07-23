@@ -37,11 +37,19 @@ geen internetverbinding nodig tijdens gebruik.
 - **Faction pack**: kies een factie en genereer in één klik alle warscrolls van die factie
   (plus battle traits, formations en lores als die opties aanstaan) — handig om een complete
   referentieset te printen los van een specifieke lijst.
-- **Kaart-achterkanten**: voor dubbelzijdig printen (alleen in A6-modus). Kies een kleur en/of
-  upload een afbeelding; de app zet er automatisch een gespiegeld vel achterkanten achter elk
-  vel voorkanten, zodat je op de lange zijde kunt omslaan. De afbeelding wordt niet opgeslagen
-  (alleen voor deze sessie, blijft lokaal in de browser).
-- URL-parameters voor de live versie: `?demo=1` laadt de voorbeeldlijst, `?size=a6|s|l` kiest het formaat, `?lang=nl|en` kiest de taal.
+- **Kaart-achterkanten**: voor dubbelzijdig printen (alleen in A6-modus). De app zet automatisch
+  een gespiegeld vel achterkanten achter elk vel voorkanten, zodat je op de **lange zijde** kunt
+  omslaan. Je stelt de achterkant zelf samen:
+  - **Twee kleuren + motief**: kies een basiskleur en een accentkleur, en een van de acht motieven
+    (effen, diagonale strepen, stippen, rooster, arcering, chevron, schubben, ruiten). De motieven
+    zijn vector-CSS, dus ze printen scherp op elk formaat.
+  - **Eigen afbeelding, schaalbaar**: upload een logo of illustratie en schaal die met de
+    schuifregelaar (10–250%). Op 100% zonder tegelen vult de afbeelding de kaart (cover); met
+    **tegelen** wordt het een herhalend patroon — handig voor kleine logo's of motieven.
+    De afbeelding ligt over het gekozen motief heen, dus je kunt beide combineren.
+    Ze wordt niet geüpload of opgeslagen (alleen deze sessie, blijft lokaal in de browser).
+- URL-parameters voor de live versie: `?demo=1` laadt de voorbeeldlijst, `?size=a6|s|l` kiest het
+  formaat, `?lang=nl|en` kiest de taal, `?backs=1` zet achterkanten aan en `?pattern=…` kiest het motief.
 - Flavourtekst aan/uit.
 - Klik op een kaartkop om die kaart bij het afdrukken over te slaan.
 - Voeg via *Extra kaart* elke willekeurige warscroll toe (handig voor Spearhead of proxies).

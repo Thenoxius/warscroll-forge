@@ -69,15 +69,42 @@
       <label class="opt-row"><input type="checkbox" id="optTraits" checked> <span id="lblTraits">Battle traits &amp; formation</span></label>
       <label class="opt-row"><input type="checkbox" id="optLores" checked> <span id="lblLores">Lores &amp; manifestaties</span></label>
       <label class="opt-row"><input type="checkbox" id="optBacks"> <span id="lblBacks">Kaart-achterkanten (dubbelzijdig printen)</span></label>
-      <div class="opt-row back-opts">
-        <span class="opt-name" id="lblBackColor">Kleur</span>
-        <input type="color" id="backColor" value="#262b3a">
-        <span class="opt-name" id="lblBackImage">Afbeelding</span>
-        <input type="file" id="backImage" accept="image/*">
+      <div class="back-panel" id="backPanel" hidden>
+        <div class="opt-row back-opts">
+          <span class="opt-name" id="lblBackColor">Kleur</span>
+          <input type="color" id="backColor" value="#262b3a">
+          <span class="opt-name" id="lblBackColor2">2e kleur</span>
+          <input type="color" id="backColor2" value="#c9a24b">
+        </div>
+        <div class="opt-row back-opts">
+          <span class="opt-name" id="lblBackPattern">Motief</span>
+          <select id="backPattern">
+            <option value="solid">Effen</option>
+            <option value="stripes">Diagonale strepen</option>
+            <option value="dots">Stippen</option>
+            <option value="grid">Rooster</option>
+            <option value="crosshatch">Arcering</option>
+            <option value="chevron">Chevron</option>
+            <option value="scales">Schubben</option>
+            <option value="diamonds">Ruiten</option>
+          </select>
+        </div>
+        <div class="opt-row back-opts">
+          <span class="opt-name" id="lblBackImage">Afbeelding</span>
+          <input type="file" id="backImage" accept="image/*">
+        </div>
+        <div class="opt-row back-opts" id="imgScaleRow" hidden>
+          <span class="opt-name" id="lblBackScale">Grootte</span>
+          <input type="range" id="backScale" min="10" max="250" step="5" value="100">
+          <span id="backScaleVal" class="scale-val">100%</span>
+          <label class="tilelbl"><input type="checkbox" id="backTile"> <span id="lblBackTile">tegelen</span></label>
+          <button id="btnBackImgClear" class="btn btn-ghost" style="padding:3px 8px;font-size:11px">✕</button>
+        </div>
       </div>
       <p class="hint" id="backsHint">Achterkanten werken alleen in A6-modus: achter elk vel met 4 voorkanten komt een
       gespiegeld vel met achterkanten. Print dubbelzijdig en laat omslaan over de <b>lange zijde</b>.
-      De afbeelding wordt alleen deze sessie bewaard.</p>
+      Kies een motief in twee kleuren, en/of een eigen afbeelding die je met de schuifregelaar schaalt
+      (tegelen maakt er een herhalend patroon van). De afbeelding wordt alleen deze sessie bewaard.</p>
     </fieldset>
 
     <fieldset class="options">
