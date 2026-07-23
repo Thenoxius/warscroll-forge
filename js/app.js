@@ -44,6 +44,65 @@ for (const v of fabsBySub.values()) v.sort((a, b) => (a.line || 0) - (b.line || 
 
 const warnings = [];
 const warn = msg => warnings.push(msg);
+let currentView = null; // {type:'list'} of {type:'pack', fid}
+
+/* ---------- taal: nl indien systeem/keuze Nederlands, anders Engels ---------- */
+const LANG = (() => {
+  const pick = new URLSearchParams(location.search).get('lang')
+    || localStorage.getItem('wsf.lang') || navigator.language || 'en';
+  return String(pick).toLowerCase().startsWith('nl') ? 'nl' : 'en';
+})();
+const STR = {
+  nl: {
+    general: '★ Generaal', reinforced: 'Versterkt ×2', reinforcedFoot: 'versterkt',
+    manifestation: 'Manifestatie', extraCard: 'Extra kaart',
+    enhMissing: 'Regels niet gevonden in de lokale data — noteer zelf:',
+    notFoundBody: d => `Niet gevonden in de lokale Wahapedia-data (export van ${d}). Waarschijnlijk nieuwer dan de laatste export — werk de data bij of noteer de regels hieronder.`,
+    optionsFromList: 'Opties uit je lijst: ',
+    loresSection: 'Lores & Manifestaties',
+    statusPaste: 'Plak eerst een legerlijst.',
+    statusMade: (n, f) => `✔ ${n} kaarten aangemaakt${f ? ' voor ' + f : ''}.`,
+    statusAttention: '⚠ Aandachtspunten:',
+    statusNotFound: n => `‘${n}’ niet gevonden.`,
+    packStatus: (f, n) => `✔ Faction pack: ${f} — ${n} warscrolls.`,
+    wFaction: f => `Factie ‘${f}’ niet herkend — er wordt zonder factie-voorkeur gezocht.`,
+    wReadAs: (a, b) => `‘${a}’ gelezen als warscroll ‘${b}’.`,
+    wReadAsFuzzy: (a, b) => `‘${a}’ gelezen als warscroll ‘${b}’ (fuzzy).`,
+    wReadAsGeneric: (a, b) => `‘${a}’ gelezen als ‘${b}’.`,
+    wFormation: f => `Battle formation ‘${f}’ niet gevonden — lege kaart toegevoegd.`,
+    wFormationAs: (a, b) => `Formatie ‘${a}’ gelezen als ‘${b}’.`,
+    wWarscroll: n => `Warscroll ‘${n}’ niet gevonden — lege kaart toegevoegd.`,
+    wEnh: (n, u) => `Enhancement ‘${n}’ (${u}) niet gevonden — invulblok toegevoegd.`,
+    wLore: (k, n) => `${k} lore ‘${n}’ niet gevonden — lege kaart toegevoegd.`,
+    wLoreAs: (a, b) => `Lore ‘${a}’ gelezen als ‘${b}’.`,
+    wManif: n => `Manifestatie-warscroll ‘${n}’ niet gevonden.`,
+  },
+  en: {
+    general: '★ General', reinforced: 'Reinforced ×2', reinforcedFoot: 'reinforced',
+    manifestation: 'Manifestation', extraCard: 'Extra card',
+    enhMissing: 'Rules not found in the local data — write them in:',
+    notFoundBody: d => `Not found in the local Wahapedia data (export of ${d}). Probably newer than the latest export — update the data or write the rules below.`,
+    optionsFromList: 'Options from your list: ',
+    loresSection: 'Lores & Manifestations',
+    statusPaste: 'Paste an army list first.',
+    statusMade: (n, f) => `✔ ${n} cards created${f ? ' for ' + f : ''}.`,
+    statusAttention: '⚠ Points of attention:',
+    statusNotFound: n => `‘${n}’ not found.`,
+    packStatus: (f, n) => `✔ Faction pack: ${f} — ${n} warscrolls.`,
+    wFaction: f => `Faction ‘${f}’ not recognised — searching without faction preference.`,
+    wReadAs: (a, b) => `‘${a}’ matched to warscroll ‘${b}’.`,
+    wReadAsFuzzy: (a, b) => `‘${a}’ matched to warscroll ‘${b}’ (fuzzy).`,
+    wReadAsGeneric: (a, b) => `‘${a}’ matched to ‘${b}’.`,
+    wFormation: f => `Battle formation ‘${f}’ not found — blank card added.`,
+    wFormationAs: (a, b) => `Formation ‘${a}’ matched to ‘${b}’.`,
+    wWarscroll: n => `Warscroll ‘${n}’ not found — blank card added.`,
+    wEnh: (n, u) => `Enhancement ‘${n}’ (${u}) not found — write-in block added.`,
+    wLore: (k, n) => `${k} lore ‘${n}’ not found — blank card added.`,
+    wLoreAs: (a, b) => `Lore ‘${a}’ matched to ‘${b}’.`,
+    wManif: n => `Manifestation warscroll ‘${n}’ not found.`,
+  },
+};
+const T = STR[LANG];
 
 /* ---------- zoeken ---------- */
 function findWarscroll(name, fid) {
@@ -55,7 +114,7 @@ function findWarscroll(name, fid) {
   hits = wsList.filter(w => { const wn = norm(w.name); return wn.includes(n) || n.includes(wn); });
   if (hits.length) {
     const best = hits.sort((a, b) => (rank(b) - rank(a)) || (Math.abs(norm(a.name).length - n.length) - Math.abs(norm(b.name).length - n.length)))[0];
-    warn(`‘${name}’ gelezen als warscroll ‘${best.name}’.`);
+    warn(T.wReadAs(name, best.name));
     return best;
   }
   // fuzzy
@@ -64,7 +123,7 @@ function findWarscroll(name, fid) {
     const s = sim(w.name, n) + rank(w) * 0.01;
     if (s > bestS) { bestS = s; best = w; }
   }
-  if (best) warn(`‘${name}’ gelezen als warscroll ‘${best.name}’ (fuzzy).`);
+  if (best) warn(T.wReadAsFuzzy(name, best.name));
   return best;
 }
 
@@ -145,6 +204,8 @@ function parseList(text) {
 
 /* ---------- fase-kleuren & iconen ---------- */
 function phaseKey(a) {
+  // Officiële kaarten kleuren alles met conditie "Passive" teal, ongeacht de fase
+  if (norm(a.cond || '') === 'passive') return 'passive';
   const ph = norm(a.phase || '');
   if (ph.includes('hero')) return 'hero';
   if (ph.includes('movement')) return 'movement';
@@ -179,10 +240,10 @@ function abilityBlock(a, tag) {
   const legend = optFlavour() && a.legend ? `<div class="legend">${esc(a.legend)}</div>` : '';
   return `<div class="ab" style="--ph: var(--ph-${key})">
     <div class="ab-head">
-      <div class="ab-head-top"><span class="cond">${esc(cond)}${a.reaction ? ' — Reaction' : ''}</span>
-        ${icon ? `<span class="icons"><svg><use href="#${icon}"/></svg></span>` : ''}</div>
-      <div class="ab-title">${esc(a.name)}${chip}</div>
+      ${icon ? `<span class="icons"><svg><use href="#${icon}"/></svg></span>` : ''}
+      <span class="cond">${esc(cond)}${a.reaction ? ' — Reaction' : ''}</span>
     </div>
+    <div class="ab-title">${esc(a.name)}${chip}</div>
     <div class="ab-body">${legend}${a.desc || ''}</div>
     ${a.kw ? `<div class="ab-kw">Keywords: ${esc(a.kw)}</div>` : ''}
   </div>`;
@@ -259,41 +320,46 @@ function unitCard(w, ctx = {}) {
   const bases = baseByWid.get(w.id) || [];
   const pts = ctx.pts ?? (w.cost || null);
   const chips = [];
-  if (ctx.general) chips.push('★ Generaal');
-  if (ctx.reinforced) chips.push('Versterkt ×2');
+  if (ctx.general) chips.push(T.general);
+  if (ctx.reinforced) chips.push(T.reinforced);
   if (ctx.tag) chips.push(ctx.tag);
-  const subtitleBits = [D.factions[w.fid] || '', w.role, chips.join(' · ')].filter(Boolean);
+  const facName = D.factions[w.fid] || '';
+  const subtitleBits = [w.role, chips.join(' · ')].filter(Boolean);
   const legend = optFlavour() && w.legend ? `<div class="ab-body legend" style="padding:2px 2px 6px;font-style:italic;color:#5c5a52;font-size:10.5px">${esc(w.legend)}</div>` : '';
 
   const enh = (ctx.enhancements || []).map(e => {
     if (e.fab) return abilityBlock(e.fab, e.fab.typeName || 'Enhancement');
-    return `<div class="ab" style="--ph: var(--ph-passive)"><div class="ab-head">
-        <div class="ab-head-top"><span class="cond">Enhancement</span></div>
-        <div class="ab-title">${esc(e.name)}</div>
-      </div>
-      <div class="ab-body missing" style="font-style:italic;color:#7a2a22">Regels niet gevonden in de lokale data — noteer zelf:</div>
+    return `<div class="ab" style="--ph: var(--ph-passive)"><div class="ab-head"><span class="cond">Enhancement</span></div>
+      <div class="ab-title">${esc(e.name)}</div>
+      <div class="ab-body missing" style="font-style:italic;color:#7a2a22">${T.enhMissing}</div>
       <div class="ab-body"><div class="write-lines"></div><div class="write-lines"></div></div></div>`;
   }).join('');
 
   const kwMain = kws.filter(k => !k.fac).map(k => k.kw + (k.param ? ` (${k.param})` : '')).join(', ');
   const kwFac = kws.filter(k => k.fac).map(k => k.kw).join(', ');
   const baseTxt = [...new Set(bases.map(b => b.base + (bases.length > 1 && b.model ? ` (${b.model})` : '')))].join(' · ');
-  const unitSize = ctx.reinforced && w.unitSize ? `${+w.unitSize * 2} (versterkt)` : w.unitSize;
+  const unitSize = ctx.reinforced && w.unitSize ? `${+w.unitSize * 2} (${T.reinforcedFoot})` : w.unitSize;
 
   return cardShell({
     cls: ctx.cls || 'unit',
-    head: `<header class="card-head" title="Klik om deze kaart bij het afdrukken over te slaan">
+    head: `<header class="card-head">
       ${ctx.count > 1 ? `<div class="count-badge">${ctx.count}×</div>` : ''}
       ${statCluster(w)}
-      <div class="title"><h2>${esc(w.name)}</h2><div class="subtitle">${esc(subtitleBits.join(' • '))}</div></div>
+      <div class="title">
+        ${facName ? `<div class="sub-top">• ${esc(facName)} Warscroll •</div>` : ''}
+        <h2>${esc(w.name)}</h2>
+        <div class="subtitle">${esc(subtitleBits.join(' • '))}</div>
+      </div>
       ${pts ? `<div class="pts"><b>${esc(pts)}</b><span>pts</span></div>` : ''}
     </header>`,
     body: `${legend}
       ${weaponsTable(wpns.filter(x => x.type === 'RANGED'), true)}
       ${weaponsTable(wpns.filter(x => x.type === 'MELEE'), false)}
       <div class="abilities">${abs.map(a => abilityBlock(a)).join('')}${enh}</div>`,
-    kws: `${kwMain ? `<div class="kwbar"><span class="lbl">Keywords</span><span class="vals">${esc(kwMain)}</span></div>` : ''}
-      ${kwFac ? `<div class="kwbar fac"><span class="lbl">Faction</span><span class="vals">${esc(kwFac)}</span></div>` : ''}`,
+    kws: (kwMain || kwFac) ? `<div class="kwband"><div class="kwlabel">Keywords</div><div class="kwrows">
+      ${kwMain ? `<div class="kwrow">${esc(kwMain)}</div>` : ''}
+      ${kwFac ? `<div class="kwrow fac">${esc(kwFac)}</div>` : ''}
+    </div></div>` : '',
     foot: [unitSize ? `Unit size: ${esc(unitSize)}` : '', baseTxt ? `Base: ${esc(baseTxt)}` : '', ctx.regiment ? esc(ctx.regiment) : ''].filter(Boolean).join('<span>&nbsp;</span><span>·</span><span>&nbsp;</span>'),
   });
 }
@@ -304,10 +370,9 @@ function placeholderCard(name, kind, ctx = {}) {
     head: `<header class="card-head"><div class="title"><h2>${esc(name)}</h2>
       <div class="subtitle">${esc(kind)}${ctx.general ? ' • ★ Generaal' : ''}</div></div>
       ${ctx.pts ? `<div class="pts"><b>${esc(ctx.pts)}</b><span>pts</span></div>` : ''}</header>`,
-    body: `<p class="missing">Niet gevonden in de lokale Wahapedia-data (export van ${esc(D.lastUpdate.split(' ')[0] || '?')}).
-      Waarschijnlijk nieuwer dan de laatste export — draai <b>node scripts/update-data.mjs</b> of noteer de regels hieronder.</p>
+    body: `<p class="missing">${T.notFoundBody(esc(D.lastUpdate.split(' ')[0] || '?'))}</p>
       ${'<div class="write-lines"></div>'.repeat(6)}
-      ${(ctx.bullets || []).length ? `<p class="missing">Opties uit je lijst: ${esc(ctx.bullets.join(', '))}</p>` : ''}`,
+      ${(ctx.bullets || []).length ? `<p class="missing">${T.optionsFromList}${esc(ctx.bullets.join(', '))}</p>` : ''}`,
   });
 }
 
@@ -325,7 +390,7 @@ const sectionBreak = t => `<div class="section-break no-print-break">${esc(t)}</
 function buildCards(parsed) {
   warnings.length = 0;
   const fid = factionIdByName.get(norm(parsed.faction)) || null;
-  if (parsed.faction && !fid) warn(`Factie ‘${parsed.faction}’ niet herkend — er wordt zonder factie-voorkeur gezocht.`);
+  if (parsed.faction && !fid) warn(T.wFaction(parsed.faction));
   const html = [];
 
   /* Overzichtskaart */
@@ -364,10 +429,10 @@ function buildCards(parsed) {
     if (parsed.formation) {
       const sub = findSubtype(parsed.formation, fid, s => norm(typeNameOf(s)).includes('battle formation'));
       if (sub) {
-        if (norm(sub.name) !== norm(parsed.formation)) warn(`Formatie ‘${parsed.formation}’ gelezen als ‘${sub.name}’.`);
+        if (norm(sub.name) !== norm(parsed.formation)) warn(T.wFormationAs(parsed.formation, sub.name));
         html.push(fabGroupCard(sub.name, `Battle Formation — ${D.factions[sub.fid] || ''}`, fabsBySub.get(sub.id) || []));
       } else {
-        warn(`Battle formation ‘${parsed.formation}’ niet gevonden — lege kaart toegevoegd.`);
+        warn(T.wFormation(parsed.formation));
         html.push(placeholderCard(parsed.formation, 'Battle Formation'));
       }
     }
@@ -389,14 +454,14 @@ function buildCards(parsed) {
     const enhNames = u.bullets.filter(b => !/^general$/i.test(b) && !/^reinforced/i.test(b));
     const w = findWarscroll(u.name, fid);
     if (!w) {
-      warn(`Warscroll ‘${u.name}’ niet gevonden — lege kaart toegevoegd.`);
+      warn(T.wWarscroll(u.name));
       html.push(placeholderCard(u.name, 'Warscroll', { pts: u.pts, general, bullets: enhNames }));
       continue;
     }
     const enhancements = enhNames.map(name => {
       const fab = findEnhancement(name, fid);
-      if (!fab) { warn(`Enhancement ‘${name}’ (${u.name}) niet gevonden — invulblok toegevoegd.`); return { name }; }
-      if (norm(fab.name) !== norm(name)) warn(`‘${name}’ gelezen als ‘${fab.name}’.`);
+      if (!fab) { warn(T.wEnh(name, u.name)); return { name }; }
+      if (norm(fab.name) !== norm(name)) warn(T.wReadAsGeneric(name, fab.name));
       return { name, fab: { ...fab, typeName: fab.typeName || fab.subName } };
     });
     html.push(unitCard(w, { pts: u.pts, count: u.count, general, reinforced, enhancements, regiment: u.section }));
@@ -404,25 +469,25 @@ function buildCards(parsed) {
 
   /* Lores & manifestaties */
   if ($('#optLores').checked && parsed.lores.length) {
-    html.push(sectionBreak('Lores & Manifestaties'));
+    html.push(sectionBreak(T.loresSection));
     for (const lore of parsed.lores) {
       const kind = lore.kind.toLowerCase();
       const typeMatch = s => norm(typeNameOf(s)).includes(kind === 'spell' ? 'spell lore' : kind === 'prayer' ? 'prayer lore' : 'manifestation lore');
       const sub = findSubtype(lore.name, fid, typeMatch);
       if (!sub) {
-        warn(`${lore.kind} lore ‘${lore.name}’ niet gevonden — lege kaart toegevoegd.`);
+        warn(T.wLore(lore.kind, lore.name));
         html.push(placeholderCard(lore.name, `${lore.kind} Lore`));
         continue;
       }
-      if (norm(sub.name) !== norm(lore.name)) warn(`Lore ‘${lore.name}’ gelezen als ‘${sub.name}’.`);
+      if (norm(sub.name) !== norm(lore.name)) warn(T.wLoreAs(lore.name, sub.name));
       const fabs = fabsBySub.get(sub.id) || [];
-      html.push(fabGroupCard(sub.name, `${lore.kind} Lore — ${D.factions[sub.fid] || 'Universeel'}`, fabs));
+      html.push(fabGroupCard(sub.name, `${lore.kind} Lore — ${D.factions[sub.fid] || ''}`, fabs));
       if (kind === 'manifestation') {
         for (const f of fabs) {
           const mName = f.name.replace(/^summon\s+/i, '');
           const mw = findWarscroll(mName, fid);
-          if (mw) html.push(unitCard(mw, { tag: 'Manifestatie', cls: 'unit manifestation' }));
-          else { warn(`Manifestatie-warscroll ‘${mName}’ niet gevonden.`); html.push(placeholderCard(mName, 'Manifestatie')); }
+          if (mw) html.push(unitCard(mw, { tag: T.manifestation, cls: 'unit manifestation' }));
+          else { warn(T.wManif(mName)); html.push(placeholderCard(mName, T.manifestation)); }
         }
       }
     }
@@ -436,17 +501,98 @@ function addExtraCard(query) {
   const name = query.split(' — ')[0].trim();
   if (!name) return;
   const w = findWarscroll(name, null);
-  if (!w) { setStatus(`<span class="warn">‘${esc(name)}’ niet gevonden.</span>`); return; }
-  $('#cards').insertAdjacentHTML('beforeend', unitCard(w, { tag: 'Extra kaart' }));
+  if (!w) { setStatus(`<span class="warn">${esc(T.statusNotFound(name))}</span>`); return; }
+  $('#cards').insertAdjacentHTML('beforeend', unitCard(w, { tag: T.extraCard }));
+  buildSheets();
   fitA6();
+}
+
+/* ---------- faction pack ---------- */
+function buildFactionPack(fid) {
+  warnings.length = 0;
+  const facName = D.factions[fid] || '?';
+  const html = [sectionBreak(`${facName} — Faction Pack`)];
+  if ($('#optTraits').checked) {
+    for (const s of D.fabSubtypes.filter(s => s.fid === fid && norm(typeNameOf(s)).includes('battle trait'))) {
+      const fabs = fabsBySub.get(s.id) || [];
+      if (fabs.length) html.push(fabGroupCard('Battle Traits', facName, fabs));
+    }
+    for (const s of D.fabSubtypes.filter(s => s.fid === fid && norm(typeNameOf(s)).includes('battle formation'))) {
+      const fabs = fabsBySub.get(s.id) || [];
+      if (fabs.length) html.push(fabGroupCard(s.name, `Battle Formation — ${facName}`, fabs));
+    }
+  }
+  if ($('#optLores').checked) {
+    for (const s of D.fabSubtypes.filter(s => s.fid === fid && norm(typeNameOf(s)).includes('lore'))) {
+      const fabs = fabsBySub.get(s.id) || [];
+      if (fabs.length) html.push(fabGroupCard(s.name, `${typeNameOf(s)} — ${facName}`, fabs));
+    }
+  }
+  const roleRank = w => {
+    const r = norm(w.role);
+    if (r.includes('terrain')) return 3;
+    if (r.includes('endless') || r.includes('manifestation') || r.includes('invocation')) return 4;
+    if (r.includes('hero')) return 0;
+    return 1;
+  };
+  const list = D.warscrolls.filter(w => w.fid === fid && !w.virtual)
+    .sort((a, b) => roleRank(a) - roleRank(b) || a.name.localeCompare(b.name));
+  for (const w of list) html.push(unitCard(w, {}));
+  $('#cards').innerHTML = html.join('');
+  currentView = { type: 'pack', fid };
+  setStatus(`<span class="ok">${esc(T.packStatus(facName, list.length))}</span>`);
+  buildSheets();
+  fitA6();
+}
+
+/* ---------- A6-vellen & achterkanten ---------- */
+const backOpts = {
+  on: localStorage.getItem('wsf.backs') === '1',
+  color: localStorage.getItem('wsf.backColor') || '#262b3a',
+  image: null, // dataURL — alleen deze sessie
+};
+function buildSheets() {
+  const cards = $('#cards');
+  // eerst bestaande vellen uitpakken
+  for (const sh of [...cards.querySelectorAll('.a6sheet')]) {
+    if (sh.classList.contains('backs')) { sh.remove(); continue; }
+    while (sh.firstChild) cards.insertBefore(sh.firstChild, sh);
+    sh.remove();
+  }
+  if (!cards.classList.contains('size-a6')) return;
+  const items = [...cards.querySelectorAll(':scope > .card')];
+  for (let idx = 0; idx < items.length; idx += 4) {
+    const group = items.slice(idx, idx + 4);
+    const sheet = document.createElement('div');
+    sheet.className = 'a6sheet';
+    cards.insertBefore(sheet, group[0]);
+    group.forEach(c => sheet.appendChild(c));
+    if (backOpts.on) {
+      const back = document.createElement('div');
+      back.className = 'a6sheet backs';
+      group.forEach((c, i) => {
+        c.dataset.idx = String(idx + i);
+        const b = document.createElement('div');
+        b.className = 'cardback' + (c.classList.contains('excluded') ? ' excluded' : '');
+        b.dataset.for = String(idx + i);
+        // gespiegeld voor dubbelzijdig printen (omslaan over de lange zijde)
+        b.style.gridRow = String(i < 2 ? 1 : 2);
+        b.style.gridColumn = String(i % 2 === 0 ? 2 : 1);
+        b.style.setProperty('--back-color', backOpts.color);
+        if (backOpts.image) b.style.backgroundImage = `url(${backOpts.image})`;
+        back.appendChild(b);
+      });
+      sheet.after(back);
+    }
+  }
 }
 
 /* ---------- status ---------- */
 function setStatus(html) { $('#status').innerHTML = html; }
 function reportStatus(parsed, cardCount) {
   const bits = [];
-  bits.push(`<span class="ok">✔ ${cardCount} kaarten aangemaakt${parsed.faction ? ' voor ' + esc(parsed.faction) : ''}.</span>`);
-  if (warnings.length) bits.push(`<span class="warn">⚠ Aandachtspunten:</span><ul>` + warnings.map(w => `<li>${esc(w)}</li>`).join('') + '</ul>');
+  bits.push(`<span class="ok">${esc(T.statusMade(cardCount, parsed.faction))}</span>`);
+  if (warnings.length) bits.push(`<span class="warn">${esc(T.statusAttention)}</span><ul>` + warnings.map(w => `<li>${esc(w)}</li>`).join('') + '</ul>');
   setStatus(bits.join('<br>'));
 }
 
@@ -483,13 +629,19 @@ Slickblade Seekers (170)`;
 /* ---------- UI ---------- */
 function generate() {
   const text = $('#listInput').value;
-  if (!text.trim()) { setStatus('<span class="warn">Plak eerst een legerlijst.</span>'); return; }
+  if (!text.trim()) { setStatus(`<span class="warn">${esc(T.statusPaste)}</span>`); return; }
   const parsed = parseList(text);
   const html = buildCards(parsed);
   $('#cards').innerHTML = html;
   reportStatus(parsed, $('#cards').querySelectorAll('.card').length);
   localStorage.setItem('wsf.list', text);
+  currentView = { type: 'list' };
+  buildSheets();
   fitA6();
+}
+function renderView() {
+  if (currentView && currentView.type === 'pack') buildFactionPack(currentView.fid);
+  else if ($('#listInput').value.trim()) generate();
 }
 
 $('#btnGenerate').addEventListener('click', generate);
@@ -515,23 +667,87 @@ function setSize(s) {
     ? '@page { size: A4 portrait; margin: 0; }'
     : '@page { size: A4 portrait; margin: 9mm; }';
   localStorage.setItem('wsf.size', s);
+  buildSheets();
   fitA6();
 }
 setSize(localStorage.getItem('wsf.size') || 'l');
 for (const id of ['optFlavour', 'optOverview', 'optTraits', 'optLores']) {
-  $('#' + id).addEventListener('change', () => { localStorage.setItem('wsf.' + id, $('#' + id).checked ? '1' : '0'); if ($('#listInput').value.trim()) generate(); });
+  $('#' + id).addEventListener('change', () => { localStorage.setItem('wsf.' + id, $('#' + id).checked ? '1' : '0'); renderView(); });
 }
 
-/* klik op kaartkop = overslaan bij afdrukken */
+/* faction pack */
+$('#btnPack').addEventListener('click', () => { const fid = $('#packFaction').value; if (fid) buildFactionPack(fid); });
+
+/* achterkanten */
+$('#optBacks').addEventListener('change', e => {
+  backOpts.on = e.target.checked;
+  localStorage.setItem('wsf.backs', backOpts.on ? '1' : '0');
+  buildSheets(); fitA6();
+});
+$('#backColor').addEventListener('input', e => {
+  backOpts.color = e.target.value;
+  localStorage.setItem('wsf.backColor', backOpts.color);
+  for (const b of document.querySelectorAll('.cardback')) b.style.setProperty('--back-color', backOpts.color);
+});
+$('#backImage').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) { backOpts.image = null; buildSheets(); fitA6(); return; }
+  const r = new FileReader();
+  r.onload = () => { backOpts.image = r.result; buildSheets(); fitA6(); };
+  r.readAsDataURL(f);
+});
+
+/* taal */
+$('#langNL').addEventListener('click', () => { localStorage.setItem('wsf.lang', 'nl'); location.reload(); });
+$('#langEN').addEventListener('click', () => { localStorage.setItem('wsf.lang', 'en'); location.reload(); });
+
+/* klik op kaartkop = overslaan bij afdrukken (achterkant volgt mee) */
 $('#cards').addEventListener('click', e => {
   const head = e.target.closest('.card-head');
-  if (head) head.closest('.card').classList.toggle('excluded');
+  if (!head) return;
+  const card = head.closest('.card');
+  card.classList.toggle('excluded');
+  if (card.dataset.idx) {
+    const b = $('#cards').querySelector(`.cardback[data-for="${card.dataset.idx}"]`);
+    if (b) b.classList.toggle('excluded', card.classList.contains('excluded'));
+  }
 });
 
 /* ---------- init ---------- */
-$('#dataVersion').textContent = `Data: Wahapedia-export ${D.lastUpdate.split(' ')[0] || '?'} · ${D.warscrolls.length} warscrolls`;
+$('#dataVersion').textContent = `Data: Wahapedia ${D.lastUpdate.split(' ')[0] || '?'} · ${D.warscrolls.length} warscrolls`;
 const dl = $('#allUnits');
 dl.innerHTML = D.warscrolls.filter(w => !w.virtual).map(w => `<option value="${esc(w.name)} — ${esc(D.factions[w.fid] || '')}">`).join('');
+$('#packFaction').innerHTML = '<option value=""></option>' + Object.entries(D.factions)
+  .sort((a, b) => a[1].localeCompare(b[1]))
+  .map(([id, name]) => `<option value="${esc(id)}">${esc(name)}</option>`).join('');
+$('#optBacks').checked = backOpts.on;
+$('#backColor').value = backOpts.color;
+$('#lang' + LANG.toUpperCase()).classList.add('active');
+
+/* Engelse UI-teksten (NL staat in de HTML) */
+if (LANG === 'en') {
+  const EN_UI = {
+    tagline: 'Age of Sigmar list → printable reference cards',
+    btnPrint: '🖨 Print',
+    panelLabel: 'Army list (export from the official AoS app)',
+    btnGenerate: '⚔ Create cards', btnSample: 'Sample list',
+    optionsLegend: 'Options', formatLabel: 'Format',
+    sizeL: 'Large', sizeS: 'Compact', sizeA6: 'A6 cards',
+    a6Hint: 'A6 mode: every card is exactly 105 × 148 mm; 4 cards are placed on one A4 sheet (2×2) for cutting. In the print dialog: paper A4, <b>pages per sheet: 1</b> (the app builds the 2×2 sheet itself!), scale <b>100%</b>, and untick <b>headers and footers</b> — otherwise the browser prints date/URL on the sheet.',
+    lblFlavour: 'Flavour text on cards', lblOverview: 'Army overview card',
+    lblTraits: 'Battle traits & formation', lblLores: 'Lores & manifestations',
+    lblBacks: 'Card backs (double-sided printing)', lblBackColor: 'Colour', lblBackImage: 'Image',
+    backsHint: 'Backs only work in A6 mode: behind every sheet of 4 fronts comes a mirrored sheet of backs. Print double-sided, flip on the long edge. The image is kept for this session only.',
+    packLegend: 'Faction pack', btnPack: 'Generate all faction warscrolls',
+    extraLegend: 'Extra card',
+    hintExclude: 'Tip: click a card header to skip that card when printing.',
+    credits: 'Rules data: powered by <a href="https://wahapedia.ru/aos4/the-rules/data-export/" style="color:inherit">Wahapedia</a> (stored locally). Points come from your pasted list.',
+  };
+  for (const [id, html] of Object.entries(EN_UI)) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
+  $('#listInput').placeholder = 'Paste your exported army list here…\n\nGrand Alliance Chaos | Hedonites of Slaanesh | …\n-----\nGeneral’s Regiment\nSigvald, Prince of Slaanesh (240)\n• General\n…';
+  $('#addUnit').placeholder = 'Search a warscroll…';
+  $('#packFaction').firstElementChild.textContent = '';
+}
 
 const savedList = localStorage.getItem('wsf.list');
 if (savedList) $('#listInput').value = savedList;

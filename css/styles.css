@@ -17,15 +17,18 @@
   --card-rule: #c9c5b8;
   --head-grad: linear-gradient(180deg, #262624, #161614);
   /* fasekleuren — officiële AoS 4e kaartkleuren */
-  --ph-passive: #1d1d1b;
+  --ph-passive: #206772;
   --ph-start: #4a4f54;
   --ph-hero: #927736;
-  --ph-movement: #848786;
+  --ph-movement: #6d6f70;
   --ph-shooting: #375b7c;
   --ph-charge: #a34d14;
   --ph-combat: #9b2f31;
   --ph-end: #5e4a79;
   --ph-defensive: #46555f;
+  --olive-gold: #857324;
+  --save-green: #1e5c40;
+  --ward-red: #a1242a;
   --serif: 'Palatino Linotype', 'Book Antiqua', Georgia, 'Times New Roman', serif;
   --sans: 'Segoe UI', Tahoma, Arial, sans-serif;
 }
@@ -125,10 +128,16 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
 }
 .seg-btn.active { background: var(--gold); color: #201a0e; font-weight: 600; }
 .add-row { display: flex; gap: 6px; }
-.add-row input {
-  flex: 1; background: #17140f; color: #ded5bf; border: 1px solid #453b2c;
+.add-row input, .add-row select {
+  flex: 1; min-width: 0; background: #17140f; color: #ded5bf; border: 1px solid #453b2c;
   border-radius: 4px; padding: 7px 9px; font-size: 13px;
 }
+.lang-toggle { display: flex; border: 1px solid var(--gold-dim); border-radius: 4px; overflow: hidden; }
+.lang-btn { background: transparent; color: var(--text-dim); border: 0; cursor: pointer; padding: 4px 9px; font-size: 11px; font-weight: 600; }
+.lang-btn.active { background: var(--gold); color: #201a0e; }
+.back-opts { flex-wrap: wrap; }
+.back-opts input[type=color] { width: 36px; height: 26px; border: 1px solid #453b2c; background: #17140f; border-radius: 4px; padding: 1px; }
+.back-opts input[type=file] { flex: 1; min-width: 0; font-size: 11px; color: var(--text-dim); }
 .status { margin-top: 12px; font-size: 12px; line-height: 1.5; }
 .status .ok { color: #9dc08b; }
 .status .warn { color: #e0a640; }
@@ -141,21 +150,35 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
 .cards.size-l { column-count: 1; max-width: 200mm; margin: 0 auto; }
 .cards.size-s { column-count: 2; max-width: 300mm; margin: 0 auto; font-size: 0.86em; }
 
-/* A6-modus: vaste kaartgrootte 105 × 148 mm, inhoud schaalt passend */
-.cards.size-a6 {
-  column-count: auto; display: flex; flex-wrap: wrap; gap: 6mm;
-  justify-content: center; max-width: none; font-size: 0.86em;
+/* A6-modus: vaste kaartgrootte 105 × 148 mm in 2×2-vellen, inhoud schaalt passend */
+.cards.size-a6 { column-count: auto; display: block; max-width: none; font-size: 0.86em; }
+.cards.size-a6 .section-break { display: none; }
+.a6sheet {
+  display: grid; grid-template-columns: 105mm 105mm; grid-auto-rows: 148mm;
+  width: 210mm; margin: 0 auto 6mm;
 }
-.cards.size-a6 .section-break { flex-basis: 100%; }
+.a6sheet.backs { opacity: .92; }
 .cards.size-a6 .card {
   width: 105mm; height: 148mm; margin: 0;
   display: flex; flex-direction: column;
 }
 .cards.size-a6 .card-head { flex: 0 0 auto; }
 .cards.size-a6 .card-body { flex: 1 1 auto; min-height: 0; overflow: hidden; }
-.cards.size-a6 .kwbar, .cards.size-a6 .card-foot { flex: 0 0 auto; }
+.cards.size-a6 .kwband, .cards.size-a6 .card-foot { flex: 0 0 auto; }
 .fitbox { transform-origin: top left; }
 .fitbox.two-col .abilities { columns: 2; column-gap: 8px; }
+/* Achterkant voor dubbelzijdig printen */
+.cardback {
+  width: 105mm; height: 148mm; position: relative;
+  border: 1.5px solid #232320; border-radius: 5px; overflow: hidden;
+  background-color: var(--back-color, #262b3a);
+  background-size: cover; background-position: center;
+}
+.cardback::after {
+  content: ''; position: absolute; inset: 4mm;
+  border: 1px solid rgba(244,242,234,.6); border-radius: 3mm;
+  pointer-events: none;
+}
 .cards:empty::after {
   content: 'Plak links je legerlijst en klik op “Maak kaarten”.';
   display: block; text-align: center; color: var(--text-dim);
@@ -203,6 +226,10 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
   font-size: 10.5px; letter-spacing: 1.5px; text-transform: uppercase;
   color: #b9b9b4; margin-top: 3px;
 }
+.card-head .sub-top {
+  font-size: 8.5px; letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--gold-bright); margin-bottom: 2px; font-family: var(--serif);
+}
 .pts {
   flex: 0 0 auto; text-align: center;
   border: 1.5px solid #e8e6df; border-radius: 50%;
@@ -223,24 +250,24 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
 .stats { flex: 0 0 auto; position: relative; width: 104px; height: 104px; margin: 2px 0; }
 .stat {
   position: absolute; width: 44px; height: 44px; border-radius: 50%;
-  background: #f4f2ea;
-  border: 2px solid #101010;
+  background: #17171a;
+  border: 1.5px solid var(--gold-bright);
   display: grid; place-content: center; text-align: center;
   box-shadow: 0 1px 4px rgba(0,0,0,.55);
 }
-.stat b { font-size: 14px; color: #101010; line-height: 1.05; }
-.stat span { font-size: 6.5px; letter-spacing: .8px; color: #4a4a45; text-transform: uppercase; }
+.stat b { font-size: 14px; color: #fff; line-height: 1.05; }
+.stat span { font-size: 6.5px; letter-spacing: .8px; color: #d5d3ca; text-transform: uppercase; }
 .stat.move    { top: 0;    left: 30px; }
-.stat.save    { top: 30px; left: 60px; }
+.stat.save    { top: 30px; left: 60px; background: var(--save-green); }
 .stat.control { top: 60px; left: 30px; }
 .stat.health  { top: 30px; left: 0; }
 .stat.ward {
   width: 34px; height: 34px; top: 35px; left: 35px; z-index: 1;
-  background: #101010;
+  background: var(--ward-red);
   border-color: #f4f2ea;
 }
 .stat.ward b { font-size: 11px; color: #fff; }
-.stat.ward span { font-size: 5.5px; color: #cfcfca; }
+.stat.ward span { font-size: 5.5px; color: #f4d9d9; }
 .stats.no-ward .stat.move    { top: 0;    left: 30px; }
 
 /* Body */
@@ -251,13 +278,13 @@ table.weapons { width: 100%; border-collapse: collapse; margin-bottom: 7px; }
 .weapons caption {
   text-align: left; font-family: var(--serif); font-weight: 700;
   font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
-  color: #fff; background: var(--card-black);
+  color: #fff; background: var(--olive-gold);
   padding: 3px 8px;
 }
 .weapons th {
   font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
-  background: #e3e0d4; color: #3c3a33; padding: 2px 4px;
-  border-bottom: 1px solid #101010;
+  background: transparent; color: #101010; padding: 2px 4px; font-weight: 700;
+  border-bottom: 1.5px solid #101010;
 }
 .weapons th:first-child { text-align: left; padding-left: 8px; }
 .weapons td {
@@ -273,32 +300,32 @@ table.weapons { width: 100%; border-collapse: collapse; margin-bottom: 7px; }
 .size-s .abilities, .print-two .abilities { columns: 1; }
 .ab {
   break-inside: avoid;
-  border: 1px solid var(--ph, var(--ph-passive));
-  border-left-width: 4px;
-  border-radius: 3px;
+  border: 1px solid #26261f;
+  border-radius: 2px;
   background: #fdfdfa;
   margin-bottom: 7px;
   overflow: hidden;
 }
 .ab-head {
   background: var(--ph, var(--ph-passive));
-  color: #fff; padding: 3px 8px 5px;
+  color: #fff; padding: 3px 8px;
+  display: flex; align-items: center; gap: 7px;
 }
-.ab-head-top { display: flex; align-items: center; gap: 8px; }
 .ab-head .cond {
-  font-size: 9px; letter-spacing: 1px; text-transform: uppercase; opacity: .95;
-  flex: 1;
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase; opacity: .97;
+  font-weight: 700; flex: 1;
 }
 .ab-head .icons { display: flex; gap: 4px; }
 .ab-head svg { width: 12px; height: 12px; fill: #fff; }
 .ab-title {
   font-family: var(--serif); font-weight: 700; font-size: 12.5px;
-  letter-spacing: .8px; text-transform: uppercase; color: #fff;
-  margin-top: 1px; line-height: 1.2;
+  letter-spacing: .8px; text-transform: uppercase; color: #101010;
+  padding: 4px 8px 0; line-height: 1.2;
+  border-bottom: 1px solid #d9d5c8; margin: 0 0 2px; padding-bottom: 3px;
 }
 .ab-title .tag {
   font-family: var(--sans); font-size: 8.5px; font-weight: 700; letter-spacing: 1px;
-  background: #fff; color: #101010; border-radius: 2px;
+  background: var(--ph, var(--ph-passive)); color: #fff; border-radius: 2px;
   padding: 1px 5px; vertical-align: 1px; margin-left: 6px;
 }
 .ab-body { padding: 5px 8px 6px; font-size: 11.5px; }
@@ -311,16 +338,24 @@ table.weapons { width: 100%; border-collapse: collapse; margin-bottom: 7px; }
 .kw { font-weight: 700; text-transform: uppercase; font-size: .92em; letter-spacing: .3px; }
 
 /* Keywordbalken */
-.kwbar {
-  display: flex; gap: 8px; align-items: baseline;
-  background: var(--card-black);
-  color: #f2f0e9; padding: 4px 10px; font-size: 9.5px;
-  letter-spacing: .8px; text-transform: uppercase;
+/* Keywordband zoals de officiële kaart: goudlabel links, zwarte tekst op crème */
+.kwband {
+  display: flex; align-items: stretch;
   border-top: 2px solid #101010;
+  background: #f2efe6;
 }
-.kwbar.fac { background: #3a3a37; border-top: 1px solid #55554f; }
-.kwbar .lbl { flex: 0 0 auto; font-family: var(--serif); color: #b9b9b4; font-weight: 700; font-size: 9px; }
-.kwbar .vals { line-height: 1.6; }
+.kwband .kwlabel {
+  flex: 0 0 auto; display: flex; align-items: center;
+  background: var(--olive-gold); color: #fff;
+  font-family: var(--serif); font-weight: 700; font-size: 9px;
+  letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 10px;
+}
+.kwband .kwrows { flex: 1; min-width: 0; }
+.kwband .kwrow {
+  text-align: center; padding: 2.5px 8px; font-size: 9.5px; font-weight: 600;
+  letter-spacing: .8px; text-transform: uppercase; color: #101010; line-height: 1.5;
+}
+.kwband .kwrow.fac { border-top: 1px solid #b9b5a6; }
 
 .card-foot {
   display: flex; justify-content: space-between; gap: 10px;
@@ -374,12 +409,13 @@ table.weapons { width: 100%; border-collapse: collapse; margin-bottom: 7px; }
   .card { box-shadow: none; }
   .card.excluded { display: none; }
   /* A6-modus: 2×2-snijvel op A4 (een kwart A4 is exact A6) */
-  .cards.size-a6 {
-    display: grid; grid-template-columns: 105mm 105mm; grid-auto-rows: 148mm;
-    gap: 0; justify-content: center; width: 210mm; max-width: none; margin: 0;
-  }
-  .cards.size-a6 .card { width: 105mm; height: 148mm; border-radius: 0; break-inside: avoid; }
-  .cards.size-a6 .section-break { display: none; }
+  .cards.size-a6 { display: block; margin: 0; }
+  .a6sheet { margin: 0; page-break-after: always; break-after: page; break-inside: avoid; }
+  .a6sheet:last-child { page-break-after: auto; break-after: auto; }
+  .a6sheet.backs { opacity: 1; }
+  .cards.size-a6 .card { border-radius: 0; }
+  .cards.size-a6 .card.excluded { display: flex; visibility: hidden; }
+  .size-a6 .cardback.excluded { visibility: hidden; }
   .section-break { color: #6e5622; }
   .section-break::before, .section-break::after { border-color: #a89467; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

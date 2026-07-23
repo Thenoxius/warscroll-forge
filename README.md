@@ -32,7 +32,16 @@ geen internetverbinding nodig tijdens gebruik.
   Bij afdrukken komen er automatisch **4 kaarten op één A4-vel** (2×2-snijvel; een kwart
   A4 is exact A6). Printvenster: papier A4, schaal 100%, marges "Geen", en zet
   **kop- en voetteksten uit** (anders drukt de browser datum/URL op het vel).
-- URL-parameters voor de live versie: `?demo=1` laadt de voorbeeldlijst, `?size=a6|s|l` kiest het formaat.
+- **Taal**: NL/EN-schakelaar rechtsboven. Standaard volgt de app de taal van je browser
+  (`navigator.language`); je keuze wordt onthouden. Ook via URL: `?lang=en`.
+- **Faction pack**: kies een factie en genereer in één klik alle warscrolls van die factie
+  (plus battle traits, formations en lores als die opties aanstaan) — handig om een complete
+  referentieset te printen los van een specifieke lijst.
+- **Kaart-achterkanten**: voor dubbelzijdig printen (alleen in A6-modus). Kies een kleur en/of
+  upload een afbeelding; de app zet er automatisch een gespiegeld vel achterkanten achter elk
+  vel voorkanten, zodat je op de lange zijde kunt omslaan. De afbeelding wordt niet opgeslagen
+  (alleen voor deze sessie, blijft lokaal in de browser).
+- URL-parameters voor de live versie: `?demo=1` laadt de voorbeeldlijst, `?size=a6|s|l` kiest het formaat, `?lang=nl|en` kiest de taal.
 - Flavourtekst aan/uit.
 - Klik op een kaartkop om die kaart bij het afdrukken over te slaan.
 - Voeg via *Extra kaart* elke willekeurige warscroll toe (handig voor Spearhead of proxies).

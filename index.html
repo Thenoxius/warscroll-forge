@@ -27,18 +27,22 @@
     <span class="brand-mark">⚒</span>
     <div>
       <h1>Warscroll Forge</h1>
-      <p class="tagline">Age of Sigmar-lijst &rarr; printbare referentiekaarten</p>
+      <p class="tagline" id="tagline">Age of Sigmar-lijst &rarr; printbare referentiekaarten</p>
     </div>
   </div>
   <div class="topbar-actions">
     <span id="dataVersion" class="data-version"></span>
-    <button id="btnPrint" class="btn btn-gold" title="Afdrukken (Ctrl+P)">🖨 Afdrukken</button>
+    <div class="lang-toggle" role="group" aria-label="Taal">
+      <button id="langNL" class="lang-btn">NL</button>
+      <button id="langEN" class="lang-btn">EN</button>
+    </div>
+    <button id="btnPrint" class="btn btn-gold" title="Ctrl+P">🖨 Afdrukken</button>
   </div>
 </header>
 
 <main>
   <aside class="panel no-print">
-    <label class="panel-label" for="listInput">Legerlijst (export uit de officiële AoS-app)</label>
+    <label class="panel-label" for="listInput" id="panelLabel">Legerlijst (export uit de officiële AoS-app)</label>
     <textarea id="listInput" spellcheck="false"
       placeholder="Plak hier je geëxporteerde legerlijst…&#10;&#10;Grand Alliance Chaos | Hedonites of Slaanesh | …&#10;-----&#10;General's Regiment&#10;Sigvald, Prince of Slaanesh (240)&#10;• General&#10;…"></textarea>
     <div class="btn-row">
@@ -47,9 +51,9 @@
     </div>
 
     <fieldset class="options">
-      <legend>Opties</legend>
+      <legend id="optionsLegend">Opties</legend>
       <div class="opt-row">
-        <span class="opt-name">Formaat</span>
+        <span class="opt-name" id="formatLabel">Formaat</span>
         <div class="seg" role="group">
           <button id="sizeL" class="seg-btn active">Groot</button>
           <button id="sizeS" class="seg-btn">Compact</button>
@@ -60,14 +64,32 @@
       <b>4 op één A4-vel</b> (2×2) om uit te snijden. In het printvenster: papier A4,
       <b>pagina's per blad: 1</b> (de app maakt het 2×2-vel zelf!), schaal <b>100%</b>,
       en vink <b>kop- en voettekst uit</b> — anders drukt de browser datum/URL op het vel.</p>
-      <label class="opt-row"><input type="checkbox" id="optFlavour"> <span>Flavourtekst op kaarten</span></label>
-      <label class="opt-row"><input type="checkbox" id="optOverview" checked> <span>Leger-overzichtskaart</span></label>
-      <label class="opt-row"><input type="checkbox" id="optTraits" checked> <span>Battle traits &amp; formation</span></label>
-      <label class="opt-row"><input type="checkbox" id="optLores" checked> <span>Lores &amp; manifestaties</span></label>
+      <label class="opt-row"><input type="checkbox" id="optFlavour"> <span id="lblFlavour">Flavourtekst op kaarten</span></label>
+      <label class="opt-row"><input type="checkbox" id="optOverview" checked> <span id="lblOverview">Leger-overzichtskaart</span></label>
+      <label class="opt-row"><input type="checkbox" id="optTraits" checked> <span id="lblTraits">Battle traits &amp; formation</span></label>
+      <label class="opt-row"><input type="checkbox" id="optLores" checked> <span id="lblLores">Lores &amp; manifestaties</span></label>
+      <label class="opt-row"><input type="checkbox" id="optBacks"> <span id="lblBacks">Kaart-achterkanten (dubbelzijdig printen)</span></label>
+      <div class="opt-row back-opts">
+        <span class="opt-name" id="lblBackColor">Kleur</span>
+        <input type="color" id="backColor" value="#262b3a">
+        <span class="opt-name" id="lblBackImage">Afbeelding</span>
+        <input type="file" id="backImage" accept="image/*">
+      </div>
+      <p class="hint" id="backsHint">Achterkanten werken alleen in A6-modus: achter elk vel met 4 voorkanten komt een
+      gespiegeld vel met achterkanten. Print dubbelzijdig en laat omslaan over de <b>lange zijde</b>.
+      De afbeelding wordt alleen deze sessie bewaard.</p>
     </fieldset>
 
     <fieldset class="options">
-      <legend>Extra kaart</legend>
+      <legend id="packLegend">Faction pack</legend>
+      <div class="add-row">
+        <select id="packFaction"></select>
+        <button id="btnPack" class="btn btn-ghost">Alle warscrolls</button>
+      </div>
+    </fieldset>
+
+    <fieldset class="options">
+      <legend id="extraLegend">Extra kaart</legend>
       <div class="add-row">
         <input id="addUnit" list="allUnits" placeholder="Zoek een warscroll…">
         <button id="btnAdd" class="btn btn-ghost">+</button>
@@ -76,8 +98,8 @@
     </fieldset>
 
     <div id="status" class="status"></div>
-    <p class="hint">Tip: klik op een kaartkop om die kaart bij het afdrukken over te slaan.</p>
-    <p class="credits">Regeldata: powered by <a href="https://wahapedia.ru/aos4/the-rules/data-export/" style="color:inherit">Wahapedia</a> (lokaal opgeslagen). Punten komen uit je geplakte lijst.</p>
+    <p class="hint" id="hintExclude">Tip: klik op een kaartkop om die kaart bij het afdrukken over te slaan.</p>
+    <p class="credits" id="credits">Regeldata: powered by <a href="https://wahapedia.ru/aos4/the-rules/data-export/" style="color:inherit">Wahapedia</a> (lokaal opgeslagen). Punten komen uit je geplakte lijst.</p>
   </aside>
 
   <section id="cardsWrap">
