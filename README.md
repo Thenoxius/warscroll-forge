@@ -5,7 +5,7 @@ printbare referentiekaarten in AoS-stijl. Alles draait **volledig lokaal** — g
 geen internetverbinding nodig tijdens gebruik.
 
 **Live versie:** https://thenoxius.github.io/warscroll-forge/
-(elke push naar `main` haalt automatisch de nieuwste Wahapedia-data op en deployt via
+(elke push naar `main` haalt automatisch de nieuwste BSData-catalogi op en deployt via
 [GitHub Actions](https://github.com/Thenoxius/warscroll-forge/actions))
 
 ## Gebruik
@@ -57,16 +57,18 @@ geen internetverbinding nodig tijdens gebruik.
 
 ## Regeldata bijwerken
 
-De regeldata komt uit de officiële CSV-data-export van
-[Wahapedia](https://wahapedia.ru/aos4/the-rules/data-export/) (*powered by Wahapedia*) en staat
-lokaal opgeslagen in `data/`. Staat er iets niet in (bv. een gloednieuwe unit), dan krijg je een
-nette invulkaart. Bijwerken:
+De regeldata komt uit de community-onderhouden [BSData Age of Sigmar 4th](https://github.com/BSData/age-of-sigmar-4th)
+catalogi — dezelfde bron als de listbuilder [New Recruit](https://www.newrecruit.eu/). Die
+BattleScribe-data loopt doorgaans vóór op andere bronnen bij nieuwe battletomes. Het gecompileerde
+resultaat staat lokaal in `data/data.js`. Staat er iets niet in, dan krijg je een nette invulkaart.
+Bijwerken (vereist eenmalig `npm install`):
 
 ```
 npm run update-data
 ```
 
-(of `node scripts/update-data.mjs`; met `--offline` compileert hij alleen de al gedownloade CSV's opnieuw).
+(of `node scripts/update-data.mjs`; met `--offline` compileert hij alleen de al gedownloade catalogi
+uit `data/bsdata/` opnieuw.)
 
 ## Structuur
 
@@ -74,9 +76,9 @@ npm run update-data
 index.html            de app (dubbelklik en klaar)
 css/styles.css        AoS-styling + print-CSS (A4)
 js/app.js             lijst-parser, matching, kaart-rendering
-data/data.js          gecompileerde regeldata (gegenereerd)
-data/csv/             ruwe Wahapedia CSV-export
-scripts/update-data.mjs   downloadt en compileert de data
+data/data.js          gecompileerde regeldata (gegenereerd, wél in git)
+data/bsdata/          ruwe BSData-catalogi (gedownload, niet in git)
+scripts/update-data.mjs   downloadt de catalogi en compileert data/data.js
 ```
 
 Punten op de kaarten komen uit je geplakte lijst (die is leidend voor jouw battlepack);

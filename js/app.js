@@ -57,7 +57,7 @@ const STR = {
     general: '★ Generaal', reinforced: 'Versterkt ×2', reinforcedFoot: 'versterkt',
     manifestation: 'Manifestatie', extraCard: 'Extra kaart',
     enhMissing: 'Regels niet gevonden in de lokale data — noteer zelf:',
-    notFoundBody: d => `Niet gevonden in de lokale Wahapedia-data (export van ${d}). Waarschijnlijk nieuwer dan de laatste export — werk de data bij of noteer de regels hieronder.`,
+    notFoundBody: d => `Niet gevonden in de lokale BSData-data (build ${d}). Werk de data bij (npm run update-data) of noteer de regels hieronder.`,
     optionsFromList: 'Opties uit je lijst: ',
     loresSection: 'Lores & Manifestaties',
     statusPaste: 'Plak eerst een legerlijst.',
@@ -81,7 +81,7 @@ const STR = {
     general: '★ General', reinforced: 'Reinforced ×2', reinforcedFoot: 'reinforced',
     manifestation: 'Manifestation', extraCard: 'Extra card',
     enhMissing: 'Rules not found in the local data — write them in:',
-    notFoundBody: d => `Not found in the local Wahapedia data (export of ${d}). Probably newer than the latest export — update the data or write the rules below.`,
+    notFoundBody: d => `Not found in the local BSData data (build ${d}). Update the data (npm run update-data) or write the rules below.`,
     optionsFromList: 'Options from your list: ',
     loresSection: 'Lores & Manifestations',
     statusPaste: 'Paste an army list first.',
@@ -776,7 +776,7 @@ $('#cards').addEventListener('click', e => {
 });
 
 /* ---------- init ---------- */
-$('#dataVersion').textContent = `Data: Wahapedia ${D.lastUpdate.split(' ')[0] || '?'} · ${D.warscrolls.length} warscrolls`;
+$('#dataVersion').textContent = `Data: BSData ${D.lastUpdate.split(' ')[0] || '?'} · ${D.warscrolls.length} warscrolls`;
 const dl = $('#allUnits');
 dl.innerHTML = D.warscrolls.filter(w => !w.virtual).map(w => `<option value="${esc(w.name)} — ${esc(D.factions[w.fid] || '')}">`).join('');
 $('#packFaction').innerHTML = '<option value=""></option>' + Object.entries(D.factions)
@@ -812,7 +812,7 @@ if (LANG === 'en') {
     packLegend: 'Faction pack', btnPack: 'Generate all faction warscrolls',
     extraLegend: 'Extra card',
     hintExclude: 'Tip: click a card header to skip that card when printing.',
-    credits: 'Rules data: powered by <a href="https://wahapedia.ru/aos4/the-rules/data-export/" style="color:inherit">Wahapedia</a> (stored locally). Points come from your pasted list.',
+    credits: 'Rules data: <a href="https://github.com/BSData/age-of-sigmar-4th" style="color:inherit">BSData</a> community catalogues (as used by New Recruit), stored locally. Points come from your pasted list.',
   };
   for (const [id, html] of Object.entries(EN_UI)) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
   $('#listInput').placeholder = 'Paste your exported army list here…\n\nGrand Alliance Chaos | Hedonites of Slaanesh | …\n-----\nGeneral’s Regiment\nSigvald, Prince of Slaanesh (240)\n• General\n…';

@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '17 4 * * 1'   # elke maandag 04:17 UTC: verse Wahapedia-data
+    - cron: '17 4 * * 1'   # elke maandag 04:17 UTC: verse BSData-catalogi
   workflow_dispatch:
 
 permissions:
@@ -24,10 +24,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Wahapedia-data bijwerken
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Dependencies installeren
+        run: npm ci
+      - name: BSData-data bijwerken
         run: node scripts/update-data.mjs || echo "::warning::Data-update mislukt — deploy gebruikt de gecommitte data."
       - name: Cache-busting versie invullen
         run: sed -i "s/__BUILD__/${GITHUB_RUN_ID}/g" index.html
+      - name: Rauwe data en deps uit de deploy weren
+        run: rm -rf data/bsdata node_modules
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

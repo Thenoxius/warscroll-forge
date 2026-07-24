@@ -1,172 +1,402 @@
 #!/usr/bin/env node
-// Downloadt de Wahapedia AoS4 data-export (CSV) en compileert die naar data/data.js
+// Bouwt data/data.js uit de BSData Age of Sigmar 4th catalogi (BattleScribe-XML,
+// dezelfde bron als New Recruit). Deze data loopt voor op Wahapedia's CSV-export.
+//
 // Gebruik:  node scripts/update-data.mjs            (downloaden + compileren)
-//           node scripts/update-data.mjs --offline  (alleen compileren uit data/csv)
+//           node scripts/update-data.mjs --offline  (compileren uit data/bsdata)
+//
+// Bron: github.com/BSData/age-of-sigmar-4th (community, open licentie).
 
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { XMLParser } from 'fast-xml-parser';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const CSV_DIR = join(ROOT, 'data', 'csv');
-const BASE = 'https://wahapedia.ru/aos4/';
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) warscroll-forge (powered by Wahapedia)';
+const DATA_DIR = join(ROOT, 'data', 'bsdata');
+const REPO = 'BSData/age-of-sigmar-4th';
+const RAW = `https://raw.githubusercontent.com/${REPO}/main/`;
+const UA = 'warscroll-forge data build (github.com/Thenoxius/warscroll-forge)';
 
-const FILES = [
-  'Factions', 'Warscrolls', 'Warscrolls_abilities', 'Warscrolls_weapons',
-  'Warscrolls_keywords', 'Warscrolls_bases', 'Warscrolls_organisation',
-  'Faction_ability_types', 'Faction_ability_subtypes', 'Faction_abilities',
-  'Last_update',
-];
+/* ---------------- XML ---------------- */
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: '',
+  isArray: (n) => [
+    'selectionEntry', 'selectionEntryGroup', 'entryLink', 'categoryLink', 'profile',
+    'characteristic', 'cost', 'constraint', 'rule', 'infoLink', 'catalogueLink',
+    'publication', 'sharedSelectionEntry', 'sharedSelectionEntryGroup', 'sharedProfile',
+  ].includes(n),
+});
+const arr = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
 
-// ---------- CSV (| gescheiden, " alleen speciaal aan veldbegin, zoals Python csv) ----------
-function parseCsv(text) {
-  const rows = [];
-  let row = [], field = '', quoted = false, atStart = true, i = 0;
-  text = text.replace(/^﻿/, '');
-  while (i < text.length) {
-    const c = text[i];
-    if (quoted) {
-      if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
-        quoted = false; i++; continue;
-      }
-      field += c; i++; continue;
-    }
-    if (c === '"' && atStart) { quoted = true; atStart = false; i++; continue; }
-    if (c === '|') { row.push(field); field = ''; atStart = true; i++; continue; }
-    if (c === '\r') { i++; continue; }
-    if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; atStart = true; i++; continue; }
-    field += c; atStart = false; i++;
-  }
-  if (field !== '' || row.length) { row.push(field); rows.push(row); }
-  return rows.filter(r => r.length > 1 || (r.length === 1 && r[0].trim() !== ''));
+/* ---------------- tekst-opmaak ----------------
+   BSData gebruikt **vet**, ^^keyword^^ en \n. Omzetten naar de HTML die de app rendert. */
+const esc = (s) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+function markup(s) {
+  if (!s) return '';
+  let t = esc(s);
+  t = t.replace(/\*\*(.+?)\*\*/gs, '<b>$1</b>');
+  t = t.replace(/\^\^(.+?)\^\^/gs, '<span class="kw">$1</span>');
+  t = t.replace(/\r?\n/g, '<br>');
+  return t.trim();
 }
+const plain = (s) => String(s ?? '').replace(/\*\*|\^\^/g, '').replace(/\r?\n/g, ' ').trim();
 
-function toObjects(rows) {
-  const hdr = rows[0].map(h => h.trim());
-  // Repareer rijen die door ongequote newlines in de bron zijn gesplitst:
-  // voeg een te korte rij samen met de volgende zolang dat binnen de headerbreedte past.
-  const fixed = [];
-  for (let i = 1; i < rows.length; i++) {
-    let r = rows[i];
-    while (r.length < hdr.length - 1 && i + 1 < rows.length && r.length + rows[i + 1].length - 1 <= hdr.length) {
-      const next = rows[++i];
-      r = [...r.slice(0, -1), r[r.length - 1] + '\n' + next[0], ...next.slice(1)];
-    }
-    fixed.push(r);
-  }
-  return fixed.map(r => {
-    const o = {};
-    hdr.forEach((h, idx) => { if (h) o[h] = (r[idx] ?? '').trim(); });
-    return o;
-  });
+/* ---------------- download ---------------- */
+async function fetchText(url) {
+  const res = await fetch(url, { headers: { 'User-Agent': UA } });
+  if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
+  return res.text();
 }
-
-
-// ---------- HTML opschonen (whitelist) ----------
-function sanitize(html) {
-  if (!html) return '';
-  let s = html;
-  s = s.replace(/%\d{6,}([^%]*)%/g, '$1');                      // %000123Naam% -> Naam
-  s = s.replace(/<a\b[^>]*>/gi, '').replace(/<\/a>/gi, '');     // links -> platte tekst
-  s = s.replace(/<img\b[^>]*>/gi, '');
-  s = s.replace(/<span\b[^>]*class="[^"]*kwb[^"]*"[^>]*>/gi, '<span class="kw">');
-  s = s.replace(/<div\b[^>]*>/gi, '<br>').replace(/<\/div>/gi, '');
-  // alles behalve toegestane tags strippen
-  s = s.replace(/<(?!\/?(b|i|em|strong|br|ul|ol|li|span)\b)[^>]*>/gi, '');
-  // resterende attributen op toegestane tags weghalen (behalve onze eigen class="kw")
-  s = s.replace(/<(b|i|em|strong|ul|ol|li)\b[^>]*>/gi, '<$1>');
-  s = s.replace(/<span\b(?![^>]*class="kw")[^>]*>/gi, '<span>');
-  s = s.replace(/<br\b[^>]*>/gi, '<br>');
-  s = s.replace(/(<br>\s*)+$/g, '').replace(/^(\s*<br>)+/g, '');
-  return s.trim();
-}
-
-const plain = s => sanitize(s).replace(/<[^>]+>/g, '').trim();
-
 async function download() {
-  await mkdir(CSV_DIR, { recursive: true });
-  for (const f of FILES) {
-    const url = `${BASE}${f}.csv`;
-    process.stdout.write(`Downloaden ${f}.csv ... `);
-    const res = await fetch(url, { headers: { 'User-Agent': UA } });
-    if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
-    const buf = Buffer.from(await res.arrayBuffer());
-    await writeFile(join(CSV_DIR, `${f}.csv`), buf);
-    console.log(`${buf.length} bytes`);
+  await mkdir(DATA_DIR, { recursive: true });
+  const tree = JSON.parse(await fetchText(`https://api.github.com/repos/${REPO}/git/trees/main?recursive=1`));
+  const files = tree.tree.filter((t) => t.path.endsWith('.cat') || t.path.endsWith('.gst')).map((t) => t.path);
+  console.log(`Downloaden van ${files.length} catalogi…`);
+  let done = 0;
+  for (const f of files) {
+    const txt = await fetchText(RAW + encodeURIComponent(f).replace(/%2F/g, '/'));
+    await writeFile(join(DATA_DIR, f), txt, 'utf8');
+    if (++done % 20 === 0) console.log(`  ${done}/${files.length}`);
   }
+  console.log(`  ${files.length}/${files.length} klaar.`);
 }
 
-async function csv(name) {
-  const text = await readFile(join(CSV_DIR, `${name}.csv`), 'utf8');
-  return toObjects(parseCsv(text));
+/* ---------------- laden ---------------- */
+async function loadAll() {
+  const names = (await readdir(DATA_DIR)).filter((f) => f.endsWith('.cat') || f.endsWith('.gst'));
+  const cats = [];
+  for (const n of names) {
+    const doc = parser.parse(await readFile(join(DATA_DIR, n), 'utf8'));
+    const root = doc.catalogue || doc.gameSystem;
+    if (root) cats.push({ file: n, name: root.name || n, root });
+  }
+  return cats;
 }
 
+/* ---------------- boom-helpers ---------------- */
+// Verzamel alle nodes van gegeven containertype (bv. 'selectionEntry') ergens in de boom.
+function collect(node, kind, out = []) {
+  if (!node || typeof node !== 'object') return out;
+  for (const [key, val] of Object.entries(node)) {
+    for (const child of arr(val)) {
+      if (typeof child !== 'object') continue;
+      if (key === kind) out.push(child);
+      collect(child, kind, out);
+    }
+  }
+  return out;
+}
+// Directe kinderen van een bepaald containertype: node.<plural>.<kind>
+const children = (node, plural, kind) => arr(node?.[plural]?.[kind]);
+
+// Profielen (inline + via infoLink) binnen een subtree, zonder in geneste units te duiken.
+function unitProfiles(node, profileById, out = []) {
+  for (const p of children(node, 'profiles', 'profile')) out.push(p);
+  for (const l of children(node, 'infoLinks', 'infoLink')) {
+    const p = profileById.get(l.targetId);
+    if (p) out.push(p);
+  }
+  for (const plural of ['selectionEntries', 'selectionEntryGroups']) {
+    for (const kind of ['selectionEntry', 'selectionEntryGroup']) {
+      for (const c of children(node, plural, kind)) {
+        if (c.type === 'unit') continue; // niet in een geneste unit duiken
+        unitProfiles(c, profileById, out);
+      }
+    }
+  }
+  return out;
+}
+function unitCategoryLinks(node, out = []) {
+  for (const c of children(node, 'categoryLinks', 'categoryLink')) out.push(c);
+  for (const plural of ['selectionEntries', 'selectionEntryGroups']) {
+    for (const kind of ['selectionEntry', 'selectionEntryGroup']) {
+      for (const c of children(node, plural, kind)) {
+        if (c.type === 'unit') continue;
+        unitCategoryLinks(c, out);
+      }
+    }
+  }
+  return out;
+}
+
+/* ---------------- characteristic-helpers ---------------- */
+const chars = (profile) => {
+  const m = {};
+  for (const c of children(profile, 'characteristics', 'characteristic')) m[c.name] = (c['#text'] ?? '').toString();
+  return m;
+};
+const typeName = (p) => p.typeName || '';
+
+/* ---------------- ability parsen ---------------- */
+function parseAbility(p, line) {
+  const c = chars(p);
+  const tn = typeName(p);
+  let ptype = '';
+  let pts = '';
+  if (tn.includes('Spell')) { ptype = 'Spell'; pts = c['Casting Value'] || ''; }
+  else if (tn.includes('Prayer')) { ptype = 'Prayer'; pts = c['Chanting Value'] || ''; }
+  else if (tn.includes('Command')) { ptype = 'Command'; pts = c['Cost'] || ''; }
+  else if (tn.includes('Blood Tithe')) { ptype = 'Blood tithe'; pts = c['Blood Tithe Points'] || ''; }
+  else if (tn.includes('Fate')) { ptype = 'Fate'; pts = c['Fate Points'] || ''; }
+  const timing = c['Timing'] || (tn.includes('Passive') ? 'Passive' : '');
+  const parts = [];
+  if (c['Declare']) parts.push('<b>Declare:</b> ' + markup(c['Declare']));
+  if (c['Effect']) parts.push('<b>Effect:</b> ' + markup(c['Effect']));
+  if (c['Unlock Condition']) parts.push('<b>Unlock:</b> ' + markup(c['Unlock Condition']));
+  return {
+    line, name: p.name, desc: parts.join('<br>'), legend: '',
+    atype: '', reaction: /reaction/i.test(timing), cond: timing, kw: plain(c['Keywords'] || ''),
+    phase: timing, ptype, pts: String(pts || ''),
+  };
+}
+
+/* ---------------- weapon parsen ---------------- */
+function parseWeapon(p, line) {
+  const c = chars(p);
+  const ranged = typeName(p).includes('Ranged');
+  return {
+    line, name: p.name,
+    rng: c['Rng'] || '', atk: c['Atk'] || '', hit: c['Hit'] || '', wnd: c['Wnd'] || '',
+    rnd: c['Rnd'] || '', dmg: c['Dmg'] || '', type: ranged ? 'RANGED' : 'MELEE',
+    abilities: plain(c['Ability'] || ''), bd: false,
+  };
+}
+
+/* ---------------- rol afleiden uit keywords ---------------- */
+function deriveRole(kwUpper) {
+  const has = (k) => kwUpper.includes(k);
+  if (has('FACTION TERRAIN') || has('TERRAIN')) return 'Faction Terrain';
+  if (has('MANIFESTATION') || has('ENDLESS SPELL') || has('INVOCATION')) return 'Manifestation';
+  const body = has('MONSTER') ? 'Monster' : has('CAVALRY') ? 'Cavalry' : has('WAR MACHINE') ? 'War Machine' : has('INFANTRY') ? 'Infantry' : '';
+  if (has('HERO')) return (body && body !== 'Infantry' ? body + ' ' : (body === 'Infantry' ? 'Infantry ' : '')) + 'Hero';
+  return body || '';
+}
+
+/* ---------------- hoofdcompilatie ---------------- */
 async function compile() {
-  const factions = {};
-  for (const f of await csv('Factions')) factions[f.id] = f.name;
+  const cats = await loadAll();
 
-  const warscrolls = (await csv('Warscrolls')).map(w => ({
-    id: w.id, name: w.name, fid: w.faction_id, role: w.role,
-    virtual: w.virtual === 'true',
-    legend: plain(w.legend), notes: sanitize(w.notes), regOptions: plain(w.regiment_options),
-    move: w.Move, save: w.Save, control: w.Control, health: w.Health,
-    ward: w.Ward, unitSize: w.UnitSize, cost: w.Cost,
-  }));
+  // faction-lijst = de speelbare hoofd-catalogi (bestand zonder ' - ' en zonder LEGENDS)
+  const factionFiles = cats.filter((c) => /\.cat$/.test(c.file) && !c.file.includes(' - ') && !/LEGENDS/i.test(c.file)
+    && !/^(Lores|Regiments of Renown|Path to Glory|Legions of Nagash|The Duardin Ascendant|Big Waaagh)/.test(c.file));
+  const factionNames = factionFiles.map((c) => c.name.replace(/\.cat$/, '').trim());
+  const factions = {}; // fid -> naam (fid == naam voor eenvoud)
+  for (const n of factionNames) factions[n] = n;
+  const facByKeyword = new Map(); // UPPERCASE keyword -> fid
+  for (const n of factionNames) facByKeyword.set(n.toUpperCase(), n);
 
-  const abilities = (await csv('Warscrolls_abilities')).map(a => ({
-    wid: a.warscroll_id, line: +a.line || 0, name: a.name,
-    desc: sanitize(a.description), legend: plain(a.legend),
-    atype: a.ability_type, reaction: a.is_reaction === 'true',
-    cond: plain(a.condition), kw: plain(a.keywords), phase: a.ability_phase,
-    ptype: a.points_type, pts: a.points,
-  }));
+  // globale index van gedeelde profielen (voor infoLink-resolutie)
+  const profileById = new Map();
+  for (const c of cats) {
+    for (const p of collect(c.root, 'profile')) if (p.id) profileById.set(p.id, p);
+    for (const p of children(c.root, 'sharedProfiles', 'sharedProfile')) if (p.id) profileById.set(p.id, p);
+  }
 
-  const weapons = (await csv('Warscrolls_weapons')).map(w => ({
-    wid: w.warscroll_id, line: +w.line || 0, name: w.name,
-    rng: w.Rng, atk: w.Atk, hit: w.Hit, wnd: w.Wnd, rnd: w.Rnd, dmg: w.Dmg,
-    type: w.type, abilities: plain(w.abilities), bd: w.has_battle_damage === 'true',
-  }));
+  // puntenkaart: unitnaam -> kosten (uit alle catalogi; hoogste niet-nul wint)
+  const costByName = new Map();
+  for (const c of cats) {
+    for (const e of [...collect(c.root, 'selectionEntry'), ...collect(c.root, 'entryLink')]) {
+      if (!e.name) continue;
+      for (const cost of children(e, 'costs', 'cost')) {
+        if ((cost.name || '').toLowerCase().includes('pts')) {
+          const v = parseInt(cost.value, 10);
+          if (v > 0 && !costByName.has(e.name)) costByName.set(e.name, String(v));
+        }
+      }
+    }
+  }
 
-  const keywords = (await csv('Warscrolls_keywords')).map(k => ({
-    wid: k.warscroll_id, kw: k.keyword, fac: k.is_faction_keyword === 'true', param: k.parameter,
-  }));
+  /* ----- warscrolls uit de '* - Library.cat' bestanden ----- */
+  const warscrolls = [];
+  const abilities = [];
+  const weapons = [];
+  const keywords = [];
+  const seenUnits = new Set();
 
-  const bases = (await csv('Warscrolls_bases')).map(b => ({
-    wid: b.warscroll_id, model: b.model, base: b.base,
-  }));
+  const libFiles = cats.filter((c) => / - Library\.cat$/.test(c.file));
+  for (const lib of libFiles) {
+    const libFaction = lib.name.replace(/ - Library$/, '').trim();
+    for (const unit of collect(lib.root, 'selectionEntry').filter((e) => e.type === 'unit')) {
+      if (!unit.name || unit.id == null) continue;
+      const profs = unitProfiles(unit, profileById);
+      const statP = profs.find((p) => typeName(p) === 'Unit' || typeName(p) === 'Manifestation');
+      if (!statP) continue; // geen warscroll-statblok → geen kaart
+      const id = unit.id;
+      if (seenUnits.has(id)) continue;
+      seenUnits.add(id);
 
-  const org = (await csv('Warscrolls_organisation')).map(o => ({
-    wid: o.warscroll_id, unit: plain(o.unit), size: o.size,
-  }));
+      const st = chars(statP);
+      const kls = unitCategoryLinks(unit);
+      const kwUpper = kls.map((k) => (k.name || '').toUpperCase());
+      // faction bepalen: via faction-keyword, anders het library-bestand
+      let fid = libFaction;
+      for (const k of kwUpper) if (facByKeyword.has(k)) { fid = facByKeyword.get(k); break; }
+      const wardKw = kls.find((k) => /^WARD/i.test(k.name || ''));
+      const wardParam = wardKw ? (String(wardKw.name).match(/\(?([0-9]\+)\)?/) || [])[1] || '' : '';
 
-  const fabTypes = (await csv('Faction_ability_types')).map(t => ({
-    fid: t.faction_id, id: t.id, name: t.name, desc: sanitize(t.description),
-  }));
+      // unit size uit model-constraint (max selecties)
+      let unitSize = '';
+      const model = collect(unit, 'selectionEntry').find((e) => e.type === 'model');
+      if (model) {
+        const maxC = children(model, 'constraints', 'constraint').find((c) => c.type === 'max');
+        if (maxC && +maxC.value > 0 && +maxC.value < 1000) unitSize = String(maxC.value);
+      }
 
-  const fabSubtypes = (await csv('Faction_ability_subtypes')).map(s => ({
-    fid: s.faction_id, id: s.id, name: s.name, typeId: s.type_id,
-    desc: sanitize(s.description), legend: plain(s.legend),
-  }));
+      warscrolls.push({
+        id, name: unit.name, fid, role: deriveRole(kwUpper), virtual: false,
+        legend: '', notes: '', regOptions: '',
+        move: st['Move'] || '', save: st['Save'] || '', control: st['Control'] || '',
+        health: st['Health'] || '', ward: wardParam, unitSize, cost: costByName.get(unit.name) || '',
+      });
 
-  const fabs = (await csv('Faction_abilities')).map(a => ({
-    fid: a.faction_id, typeName: a.type_name, subId: a.subtype_id, subName: a.subtype_name,
-    line: +a.line || 0, name: a.name, desc: sanitize(a.description), legend: plain(a.legend),
-    atype: a.ability_type, reaction: a.is_reaction === 'true',
-    cond: plain(a.condition), kw: plain(a.keywords), phase: a.ability_phase,
-    ptype: a.points_type, pts: a.points,
-  }));
+      let aLine = 0, wLine = 0;
+      for (const p of profs) {
+        const tn = typeName(p);
+        if (tn.startsWith('Ability')) abilities.push({ wid: id, ...parseAbility(p, ++aLine) });
+        else if (tn.includes('Weapon')) weapons.push({ wid: id, ...parseWeapon(p, ++wLine) });
+      }
+      for (const k of kls) {
+        const name = (k.name || '').replace(/\s*\([0-9]\+\)$/, '');
+        const param = /^WARD/i.test(k.name || '') ? wardParam : '';
+        const fac = facByKeyword.has((k.name || '').toUpperCase()) || ['CHAOS', 'ORDER', 'DEATH', 'DESTRUCTION'].includes((k.name || '').toUpperCase());
+        keywords.push({ wid: id, kw: name, fac, param });
+      }
+    }
+  }
 
-  const lastUpdate = (await csv('Last_update'))[0]?.last_update ?? '';
+  /* ----- faction abilities: lores (universeel) + enhancements/formations/traits (per factie) ----- */
+  const fabTypes = [];
+  const fabSubtypes = [];
+  const fabs = [];
 
-  const data = { lastUpdate, factions, warscrolls, abilities, weapons, keywords, bases, org, fabTypes, fabSubtypes, fabs };
+  // index van entries (voor entryLink-resolutie): gedeelde + gewone met id
+  const entryById = new Map();
+  for (const c of cats) {
+    for (const e of collect(c.root, 'selectionEntry')) if (e.id) entryById.set(e.id, e);
+    for (const e of collect(c.root, 'selectionEntryGroup')) if (e.id) entryById.set(e.id, e);
+  }
+
+  const abilityProfilesOf = (node) => {
+    const out = [];
+    for (const p of children(node, 'profiles', 'profile')) if (typeName(p).startsWith('Ability')) out.push(p);
+    for (const l of children(node, 'infoLinks', 'infoLink')) {
+      const p = profileById.get(l.targetId);
+      if (p && typeName(p).startsWith('Ability')) out.push(p);
+    }
+    return out;
+  };
+  // kinderen van een groep (selectionEntries + opgeloste entryLinks)
+  const groupItems = (group) => {
+    const items = [];
+    for (const se of children(group, 'selectionEntries', 'selectionEntry')) items.push(se);
+    for (const el of children(group, 'entryLinks', 'entryLink')) items.push(entryById.get(el.targetId) || el);
+    return items;
+  };
+
+  const typeId = (fid, name) => `${fid}::${name}`;
+  const ensureType = (fid, name) => {
+    const id = typeId(fid, name);
+    if (!fabTypes.some((t) => t.id === id && t.fid === fid)) fabTypes.push({ fid, id, name, desc: '' });
+    return id;
+  };
+  const ensureSub = (fid, name, tId) => {
+    const id = `${fid}::sub::${name}`;
+    if (!fabSubtypes.some((s) => s.id === id && s.fid === fid)) fabSubtypes.push({ fid, id, name, typeId: tId, desc: '', legend: '' });
+    return id;
+  };
+  const pushFabs = (fid, typeNameStr, subName, subId, node) => {
+    let line = 0;
+    for (const p of abilityProfilesOf(node)) {
+      fabs.push({ fid, typeName: typeNameStr, subId, subName, ...parseAbility(p, ++line) });
+    }
+    return line;
+  };
+
+  // Lores.cat → universele spell/prayer/manifestation lores
+  const loresCat = cats.find((c) => /^Lores\.cat$/.test(c.file));
+  if (loresCat) {
+    for (const g of children(loresCat.root, 'sharedSelectionEntryGroups', 'selectionEntryGroup')) {
+      const items = groupItems(g);
+      if (!items.length) continue;
+      const profs = items.flatMap(abilityProfilesOf);
+      if (!profs.length) continue;
+      const allSummon = items.every((i) => /^summon\b/i.test(i.name || ''));
+      const isPrayer = profs.some((p) => typeName(p).includes('Prayer'));
+      const kind = /manifestation/i.test(g.name) || allSummon ? 'Manifestation Lore'
+        : isPrayer ? 'Prayer Lore' : 'Spell Lore';
+      const tId = ensureType('', kind);
+      const sId = ensureSub('', g.name, tId);
+      let line = 0;
+      for (const item of items) {
+        for (const p of abilityProfilesOf(item)) {
+          // Manifestatie-lore = alleen de summon-spells; de eigen abilities van de
+          // manifestatie horen op háár warscroll, niet op de lore-kaart.
+          if (kind === 'Manifestation Lore' && !/Spell|Prayer/.test(typeName(p)) && !/^summon\b/i.test(p.name || '')) continue;
+          fabs.push({ fid: '', typeName: kind, subId: sId, subName: g.name, ...parseAbility(p, ++line) });
+        }
+      }
+    }
+  }
+
+  // Per factie: enhancement-/formation-/trait-groepen uit de hoofd-.cat
+  const SKIP_GROUPS = /battle wounds|scars|^paths$|path to glory|command traits pool|^allies$/i;
+  const LORE_GROUP = /^(spell|prayer|manifestation) lores?$/i;
+  for (const fc of factionFiles) {
+    const fid = fc.name.replace(/\.cat$/, '').trim();
+    // Top-containers: enhancement-groepen + losse entries als 'Battle Traits' (die eigen ability-profielen dragen)
+    const groups = [
+      ...children(fc.root, 'sharedSelectionEntryGroups', 'selectionEntryGroup'),
+      ...children(fc.root, 'selectionEntryGroups', 'selectionEntryGroup'),
+      ...children(fc.root, 'sharedSelectionEntries', 'selectionEntry').filter((e) => /battle traits?/i.test(e.name || '')),
+      ...children(fc.root, 'selectionEntries', 'selectionEntry').filter((e) => /battle traits?/i.test(e.name || '')),
+    ];
+    for (const g of groups) {
+      if (!g.name || SKIP_GROUPS.test(g.name)) continue;
+      // Lore-groepen in de factie-cat linken naar Lores.cat (al gedekt) → overslaan
+      if (LORE_GROUP.test(g.name)) continue;
+
+      const isFormation = /formation/i.test(g.name);
+      const tName = isFormation ? 'Battle Formations'
+        : /battle trait/i.test(g.name) ? 'Battle Traits'
+        : g.name;
+      const tId = ensureType(fid, tName);
+
+      // Emit eigen ability-profielen van een container + items + geneste subgroepen
+      const walkGroup = (grp, ownSub) => {
+        const ownProfs = abilityProfilesOf(grp);
+        if (ownProfs.length) {
+          const subName = ownSub || grp.name;
+          const sId = ensureSub(fid, subName, tId);
+          let ln = 0;
+          for (const p of ownProfs) fabs.push({ fid, typeName: tName, subId: sId, subName, ...parseAbility(p, ++ln) });
+        }
+        for (const item of groupItems(grp)) {
+          const profs = abilityProfilesOf(item);
+          if (!profs.length) continue;
+          // Formatie: elk item is een eigen subtype (naam = itemnaam); anders groepeer op groepsnaam
+          const subName = isFormation ? (item.name || grp.name) : grp.name;
+          const sId = ensureSub(fid, subName, tId);
+          for (const p of profs) fabs.push({ fid, typeName: tName, subId: sId, subName, ...parseAbility(p, 1) });
+        }
+        for (const sg of children(grp, 'selectionEntryGroups', 'selectionEntryGroup')) walkGroup(sg);
+      };
+      walkGroup(g);
+    }
+  }
+
+  const data = {
+    lastUpdate: new Date().toISOString().slice(0, 10) + ' (BSData)',
+    factions, warscrolls, abilities, weapons, keywords,
+    bases: [], org: [], fabTypes, fabSubtypes, fabs,
+  };
   const js = '// Gegenereerd door scripts/update-data.mjs — niet met de hand bewerken.\n'
-    + '// Bron: Wahapedia AoS4 data-export (powered by Wahapedia), laatste update: ' + lastUpdate + '\n'
+    + '// Bron: BSData Age of Sigmar 4th (community, powered by BattleScribe-data). Build: ' + data.lastUpdate + '\n'
     + 'window.WSF_DATA = ' + JSON.stringify(data) + ';\n';
-  const out = join(ROOT, 'data', 'data.js');
-  await writeFile(out, js, 'utf8');
-  console.log(`Gecompileerd: data/data.js (${(js.length / 1024 / 1024).toFixed(1)} MB) — ${warscrolls.length} warscrolls, ${abilities.length} abilities, ${fabs.length} faction abilities. Data-update: ${lastUpdate}`);
+  await writeFile(join(ROOT, 'data', 'data.js'), js, 'utf8');
+  console.log(`Gecompileerd: ${warscrolls.length} warscrolls, ${abilities.length} abilities, ${weapons.length} weapons, ${keywords.length} keywords, ${Object.keys(factions).length} facties.`);
+  console.log(`Faction abilities: ${fabTypes.length} types, ${fabSubtypes.length} subtypes, ${fabs.length} abilities.`);
 }
 
 const offline = process.argv.includes('--offline');

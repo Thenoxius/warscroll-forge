@@ -1,0 +1,4 @@
+node_modules/
+# Rauwe BSData-catalogi worden door scripts/update-data.mjs gedownload/gegenereerd.
+# data/data.js (het gecompileerde resultaat) wordt wél gecommit als fallback.
+data/bsdata/
