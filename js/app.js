@@ -3,6 +3,7 @@
 'use strict';
 const D = window.WSF_DATA;
 if (!D) { document.getElementById('status').textContent = 'FOUT: data/data.js ontbreekt. Draai: node scripts/update-data.mjs'; return; }
+const SH = window.WSF_SPEARHEADS || { boxes: [] };
 
 /* ---------- helpers ---------- */
 const $ = s => document.querySelector(s);
@@ -65,6 +66,8 @@ const STR = {
     statusAttention: '⚠ Aandachtspunten:',
     statusNotFound: n => `‘${n}’ niet gevonden.`,
     packStatus: (f, n) => `✔ Faction pack: ${f} — ${n} warscrolls.`,
+    spearheadStatus: (b, n) => `✔ Spearhead: ${b} — ${n} warscrolls + regels.`,
+    spearheadRoster: 'Roster', spearheadWarscrolls: 'Spearhead Warscrolls', spearheadTag: 'Spearhead',
     wFaction: f => `Factie ‘${f}’ niet herkend — er wordt zonder factie-voorkeur gezocht.`,
     wReadAs: (a, b) => `‘${a}’ gelezen als warscroll ‘${b}’.`,
     wReadAsFuzzy: (a, b) => `‘${a}’ gelezen als warscroll ‘${b}’ (fuzzy).`,
@@ -89,6 +92,8 @@ const STR = {
     statusAttention: '⚠ Points of attention:',
     statusNotFound: n => `‘${n}’ not found.`,
     packStatus: (f, n) => `✔ Faction pack: ${f} — ${n} warscrolls.`,
+    spearheadStatus: (b, n) => `✔ Spearhead: ${b} — ${n} warscrolls + rules.`,
+    spearheadRoster: 'Roster', spearheadWarscrolls: 'Spearhead Warscrolls', spearheadTag: 'Spearhead',
     wFaction: f => `Faction ‘${f}’ not recognised — searching without faction preference.`,
     wReadAs: (a, b) => `‘${a}’ matched to warscroll ‘${b}’.`,
     wReadAsFuzzy: (a, b) => `‘${a}’ matched to warscroll ‘${b}’ (fuzzy).`,
@@ -545,6 +550,73 @@ function buildFactionPack(fid) {
   fitA6();
 }
 
+/* ---------- Spearhead (apart spelformaat, self-contained warscrolls uit data/spearheads.js) ---------- */
+function spearheadUnitCard(w, ctx = {}) {
+  const wpns = w.weapons || [];
+  const abs = w.abilities || [];
+  const kws = w.keywords || [];
+  const chips = ctx.general ? [T.general] : [];
+  const subtitleBits = [w.role, chips.join(' · ')].filter(Boolean);
+  const kwMain = kws.filter(k => !k.fac).map(k => k.kw + (k.param ? ` (${k.param})` : '')).join(', ');
+  const kwFac = kws.filter(k => k.fac).map(k => k.kw).join(', ');
+  return cardShell({
+    cls: 'unit spearhead',
+    head: `<header class="card-head">
+      ${ctx.count > 1 ? `<div class="count-badge">${ctx.count}×</div>` : ''}
+      ${statCluster(w)}
+      <div class="title">
+        <div class="sub-top">• ${esc(T.spearheadTag)} Warscroll •</div>
+        <h2>${esc(w.name)}</h2>
+        <div class="subtitle">${esc(subtitleBits.join(' • '))}</div>
+      </div>
+      ${w.cost ? `<div class="pts"><b>${esc(w.cost)}</b><span>pts</span></div>` : ''}
+    </header>`,
+    body: `${weaponsTable(wpns.filter(x => x.type === 'RANGED'), true)}
+      ${weaponsTable(wpns.filter(x => x.type === 'MELEE'), false)}
+      <div class="abilities">${abs.map(a => abilityBlock(a)).join('')}</div>`,
+    kws: (kwMain || kwFac) ? `<div class="kwband"><div class="kwlabel">Keywords</div><div class="kwrows">
+      ${kwMain ? `<div class="kwrow">${esc(kwMain)}</div>` : ''}
+      ${kwFac ? `<div class="kwrow fac">${esc(kwFac)}</div>` : ''}
+    </div></div>` : '',
+    foot: [w.unitSize ? `Unit size: ${esc(w.unitSize)}` : '', ctx.note ? esc(ctx.note) : ''].filter(Boolean).join('<span>&nbsp;·&nbsp;</span>'),
+  });
+}
+
+function buildSpearhead(box) {
+  warnings.length = 0;
+  const rosterHtml = box.roster.map(r =>
+    `<li>${r.general ? '<span class="genstar">★</span> ' : ''}${r.count > 1 ? esc(r.count) + '× ' : ''}${esc(r.name)}` +
+    `${r.note ? ` <span class="upts">(${esc(r.note)})</span>` : ''}</li>`).join('');
+  const html = [cardShell({
+    cls: 'overview spearhead',
+    head: `<header class="card-head"><div class="title">
+      <div class="sub-top">• ${esc(T.spearheadTag)} •</div>
+      <h2>${esc(box.name)}</h2><div class="subtitle">${esc(box.faction)}</div></div></header>`,
+    body: `<div class="reg"><h3>${esc(T.spearheadRoster)}</h3><ul>${rosterHtml}</ul></div>`,
+  })];
+
+  // Spearhead-regels per sectie (Battle Traits / Regiment Abilities / Enhancements)
+  const bySection = new Map();
+  for (const r of box.rules) { if (!bySection.has(r.section)) bySection.set(r.section, []); bySection.get(r.section).push(r); }
+  for (const [sec, rules] of bySection) html.push(fabGroupCard(sec, `${box.faction} — ${T.spearheadTag}`, rules));
+
+  // Warscroll-kaarten (uniek, in roster-volgorde)
+  html.push(sectionBreak(T.spearheadWarscrolls));
+  const seen = new Set();
+  for (const r of box.roster) {
+    if (!r.warscrollId || seen.has(r.warscrollId)) continue;
+    seen.add(r.warscrollId);
+    const w = box.warscrolls[r.warscrollId];
+    if (w) html.push(spearheadUnitCard(w, { general: r.general }));
+  }
+
+  $('#cards').innerHTML = html.join('');
+  currentView = { type: 'spearhead', boxId: box.id };
+  setStatus(`<span class="ok">${esc(T.spearheadStatus(box.name, seen.size))}</span>`);
+  buildSheets();
+  fitA6();
+}
+
 /* ---------- A6-vellen & achterkanten ---------- */
 const backOpts = {
   on: localStorage.getItem('wsf.backs') === '1',
@@ -670,6 +742,7 @@ function generate() {
 }
 function renderView() {
   if (currentView && currentView.type === 'pack') buildFactionPack(currentView.fid);
+  else if (currentView && currentView.type === 'spearhead') { const b = SH.boxes.find(x => x.id === currentView.boxId); if (b) buildSpearhead(b); }
   else if ($('#listInput').value.trim()) generate();
 }
 
@@ -704,8 +777,23 @@ for (const id of ['optFlavour', 'optOverview', 'optTraits', 'optLores']) {
   $('#' + id).addEventListener('change', () => { localStorage.setItem('wsf.' + id, $('#' + id).checked ? '1' : '0'); renderView(); });
 }
 
+/* tabs */
+function setTab(t) {
+  const army = t === 'army';
+  $('#paneArmy').hidden = !army;
+  $('#paneSpearhead').hidden = army;
+  $('#tabArmy').classList.toggle('active', army);
+  $('#tabSpearhead').classList.toggle('active', !army);
+  localStorage.setItem('wsf.tab', t);
+}
+$('#tabArmy').addEventListener('click', () => setTab('army'));
+$('#tabSpearhead').addEventListener('click', () => setTab('spearhead'));
+
 /* faction pack */
 $('#btnPack').addEventListener('click', () => { const fid = $('#packFaction').value; if (fid) buildFactionPack(fid); });
+
+/* spearhead */
+$('#btnSpearhead').addEventListener('click', () => { const b = SH.boxes.find(x => x.id === $('#spearheadPick').value); if (b) buildSpearhead(b); });
 
 /* achterkanten */
 $('#optBacks').addEventListener('change', e => {
@@ -782,6 +870,14 @@ dl.innerHTML = D.warscrolls.filter(w => !w.virtual).map(w => `<option value="${e
 $('#packFaction').innerHTML = '<option value=""></option>' + Object.entries(D.factions)
   .sort((a, b) => a[1].localeCompare(b[1]))
   .map(([id, name]) => `<option value="${esc(id)}">${esc(name)}</option>`).join('');
+// Spearhead-picker vullen (of tab uitschakelen als er geen data is)
+if (SH.boxes.length) {
+  $('#spearheadPick').innerHTML = SH.boxes.map(b => `<option value="${esc(b.id)}">${esc(b.faction)} — ${esc(b.name)}</option>`).join('');
+} else {
+  $('#tabSpearhead').disabled = true;
+  $('#tabSpearhead').title = 'Nog geen Spearhead-data — draai scripts/update-spearheads.mjs';
+}
+
 $('#optBacks').checked = backOpts.on;
 $('#backPanel').hidden = !backOpts.on;
 $('#backBorder').value = backOpts.border;
@@ -811,6 +907,9 @@ if (LANG === 'en') {
     backsHint: 'Backs only work in A6 mode: behind every sheet of 4 fronts comes a mirrored sheet of backs. Print double-sided, flip on the long edge. Pick a pattern in two colours, and/or your own image scaled with the slider (tiling turns it into a repeating pattern). The image is kept for this session only.',
     packLegend: 'Faction pack', btnPack: 'Generate all faction warscrolls',
     extraLegend: 'Extra card',
+    tabArmy: '📜 Army list', tabSpearhead: '⚡ Spearhead',
+    spearheadLabel: 'Pick a Spearhead set', btnSpearhead: '⚡ Create Spearhead cards',
+    spearheadHint: 'Spearhead is a separate game mode with a fixed force and its own warscrolls (different stats/abilities). Pick a box and print the complete set: roster, Spearhead warscrolls and the Spearhead rules (battle traits, enhancements, regiment abilities).',
     hintExclude: 'Tip: click a card header to skip that card when printing.',
     credits: 'Rules data: <a href="https://github.com/BSData/age-of-sigmar-4th" style="color:inherit">BSData</a> community catalogues (as used by New Recruit), stored locally. Points come from your pasted list.',
   };
@@ -831,11 +930,15 @@ for (const id of ['optFlavour', 'optOverview', 'optTraits', 'optLores']) {
   const v = localStorage.getItem('wsf.' + id);
   if (v !== null) $('#' + id).checked = v === '1';
 }
-/* URL-parameters: ?size=l|s|a6, ?demo=1, ?backs=1, ?pattern=… */
+/* URL-parameters: ?size=l|s|a6, ?demo=1, ?backs=1, ?pattern=…, ?spearhead=<boxId> */
 const qp = new URLSearchParams(location.search);
 if (qp.get('size')) setSize(qp.get('size'));
 if (qp.get('pattern')) { backOpts.pattern = qp.get('pattern'); $('#backPattern').value = backOpts.pattern; }
 if (qp.get('backs') === '1') { backOpts.on = true; $('#optBacks').checked = true; $('#backPanel').hidden = false; }
-if (qp.get('demo') === '1') { $('#listInput').value = SAMPLE; generate(); }
+const shParam = qp.get('spearhead');
+if (shParam != null) {
+  const box = SH.boxes.find(b => b.id === shParam) || SH.boxes[0];
+  if (box) { setTab('spearhead'); $('#spearheadPick').value = box.id; buildSpearhead(box); }
+} else if (qp.get('demo') === '1') { $('#listInput').value = SAMPLE; generate(); }
 else if (savedList) generate();
 })();

@@ -31,6 +31,8 @@ jobs:
         run: npm ci
       - name: BSData-data bijwerken
         run: node scripts/update-data.mjs || echo "::warning::Data-update mislukt — deploy gebruikt de gecommitte data."
+      - name: Spearhead-data bijwerken (Wahapedia)
+        run: node scripts/update-spearheads.mjs || echo "::warning::Spearhead-update mislukt — deploy gebruikt de gecommitte data."
       - name: Cache-busting versie invullen
         run: sed -i "s/__BUILD__/${GITHUB_RUN_ID}/g" index.html
       - name: Rauwe data en deps uit de deploy weren

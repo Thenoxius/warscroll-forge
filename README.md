@@ -53,7 +53,16 @@ geen internetverbinding nodig tijdens gebruik.
   formaat, `?lang=nl|en` kiest de taal, `?backs=1` zet achterkanten aan en `?pattern=…` kiest het motief.
 - Flavourtekst aan/uit.
 - Klik op een kaartkop om die kaart bij het afdrukken over te slaan.
-- Voeg via *Extra kaart* elke willekeurige warscroll toe (handig voor Spearhead of proxies).
+- Voeg via *Extra kaart* elke willekeurige warscroll toe (handig voor proxies).
+
+### Spearhead-tab
+
+Spearhead is een apart AoS-spelformaat met een vaste force en **eigen warscrolls** (afwijkende
+stats/abilities t.o.v. matched play). De **Spearhead-tab** biedt kant-en-klare sets: kies een box
+en print de complete set — roster, Spearhead-warscrolls en de Spearhead-regels (battle traits,
+enhancements, regiment abilities), net als de rest in A6. De Spearhead-regeldata komt van
+[Wahapedia](https://wahapedia.ru/) (de enige gestructureerde bron hiervoor) en wordt bij elke deploy
+ververst via `scripts/update-spearheads.mjs`. URL: `?spearhead=<boxId>` opent direct een set.
 
 ## Regeldata bijwerken
 

@@ -42,12 +42,49 @@
 
 <main>
   <aside class="panel no-print">
-    <label class="panel-label" for="listInput" id="panelLabel">Legerlijst (export uit de officiële AoS-app)</label>
-    <textarea id="listInput" spellcheck="false"
-      placeholder="Plak hier je geëxporteerde legerlijst…&#10;&#10;Grand Alliance Chaos | Hedonites of Slaanesh | …&#10;-----&#10;General's Regiment&#10;Sigvald, Prince of Slaanesh (240)&#10;• General&#10;…"></textarea>
-    <div class="btn-row">
-      <button id="btnGenerate" class="btn btn-gold">⚔ Maak kaarten</button>
-      <button id="btnSample" class="btn btn-ghost">Voorbeeldlijst</button>
+    <div class="tabs" role="tablist">
+      <button id="tabArmy" class="tab active" role="tab">📜 Legerlijst</button>
+      <button id="tabSpearhead" class="tab" role="tab">⚡ Spearhead</button>
+    </div>
+
+    <div id="paneArmy" class="tabpane">
+      <label class="panel-label" for="listInput" id="panelLabel">Legerlijst (export uit de officiële AoS-app)</label>
+      <textarea id="listInput" spellcheck="false"
+        placeholder="Plak hier je geëxporteerde legerlijst…&#10;&#10;Grand Alliance Chaos | Hedonites of Slaanesh | …&#10;-----&#10;General's Regiment&#10;Sigvald, Prince of Slaanesh (240)&#10;• General&#10;…"></textarea>
+      <div class="btn-row">
+        <button id="btnGenerate" class="btn btn-gold">⚔ Maak kaarten</button>
+        <button id="btnSample" class="btn btn-ghost">Voorbeeldlijst</button>
+      </div>
+
+      <fieldset class="options">
+        <legend id="packLegend">Faction pack</legend>
+        <div class="add-row">
+          <select id="packFaction"></select>
+          <button id="btnPack" class="btn btn-ghost">Alle warscrolls</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="options">
+        <legend id="extraLegend">Extra kaart</legend>
+        <div class="add-row">
+          <input id="addUnit" list="allUnits" placeholder="Zoek een warscroll…">
+          <button id="btnAdd" class="btn btn-ghost">+</button>
+        </div>
+        <datalist id="allUnits"></datalist>
+      </fieldset>
+    </div>
+
+    <div id="paneSpearhead" class="tabpane" hidden>
+      <label class="panel-label" for="spearheadPick" id="spearheadLabel">Kies een Spearhead-set</label>
+      <div class="add-row">
+        <select id="spearheadPick"></select>
+      </div>
+      <div class="btn-row">
+        <button id="btnSpearhead" class="btn btn-gold">⚡ Maak Spearhead-kaarten</button>
+      </div>
+      <p class="hint" id="spearheadHint">Spearhead is een apart spelformaat met een vaste force en eigen warscrolls
+      (afwijkende stats/abilities). Kies een box en print de complete set: roster, Spearhead-warscrolls en de
+      Spearhead-regels (battle traits, enhancements, regiment abilities).</p>
     </div>
 
     <fieldset class="options">
@@ -109,23 +146,6 @@
       (tegelen maakt er een herhalend patroon van). De afbeelding wordt alleen deze sessie bewaard.</p>
     </fieldset>
 
-    <fieldset class="options">
-      <legend id="packLegend">Faction pack</legend>
-      <div class="add-row">
-        <select id="packFaction"></select>
-        <button id="btnPack" class="btn btn-ghost">Alle warscrolls</button>
-      </div>
-    </fieldset>
-
-    <fieldset class="options">
-      <legend id="extraLegend">Extra kaart</legend>
-      <div class="add-row">
-        <input id="addUnit" list="allUnits" placeholder="Zoek een warscroll…">
-        <button id="btnAdd" class="btn btn-ghost">+</button>
-      </div>
-      <datalist id="allUnits"></datalist>
-    </fieldset>
-
     <div id="status" class="status"></div>
     <p class="hint" id="hintExclude">Tip: klik op een kaartkop om die kaart bij het afdrukken over te slaan.</p>
     <p class="credits" id="credits">Regeldata: <a href="https://github.com/BSData/age-of-sigmar-4th" style="color:inherit">BSData</a>-community-catalogi (zoals New Recruit gebruikt), lokaal opgeslagen. Punten komen uit je geplakte lijst.</p>
@@ -136,6 +156,7 @@
   </section>
 </main>
 
+<script src="data/spearheads.js?v=__BUILD__"></script>
 <script src="data/data.js?v=__BUILD__"></script>
 <script src="js/app.js?v=__BUILD__"></script>
 </body>
