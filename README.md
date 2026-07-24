@@ -40,9 +40,10 @@ geen internetverbinding nodig tijdens gebruik.
 - **Kaart-achterkanten**: voor dubbelzijdig printen (alleen in A6-modus). De app zet automatisch
   een gespiegeld vel achterkanten achter elk vel voorkanten, zodat je op de **lange zijde** kunt
   omslaan. Je stelt de achterkant zelf samen:
-  - **Twee kleuren + motief**: kies een basiskleur en een accentkleur, en een van de acht motieven
-    (effen, diagonale strepen, stippen, rooster, arcering, chevron, schubben, ruiten). De motieven
-    zijn vector-CSS, dus ze printen scherp op elk formaat.
+  - **Drie kleuren + motief**: een effen **randkleur** rondom de kaart, en binnen die rand het
+    motief in een **basiskleur** en een **accentkleur**. Kies een van de acht motieven (effen,
+    diagonale strepen, stippen, rooster, arcering, chevron, schubben, ruiten). De motieven zijn
+    vector-CSS, dus ze printen scherp op elk formaat.
   - **Eigen afbeelding, schaalbaar**: upload een logo of illustratie en schaal die met de
     schuifregelaar (10–250%). Op 100% zonder tegelen vult de afbeelding de kaart (cover); met
     **tegelen** wordt het een herhalend patroon — handig voor kleine logo's of motieven.

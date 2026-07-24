@@ -548,6 +548,7 @@ function buildFactionPack(fid) {
 /* ---------- A6-vellen & achterkanten ---------- */
 const backOpts = {
   on: localStorage.getItem('wsf.backs') === '1',
+  border: localStorage.getItem('wsf.backBorder') || '#14100c',
   color: localStorage.getItem('wsf.backColor') || '#262b3a',
   color2: localStorage.getItem('wsf.backColor2') || '#c9a24b',
   pattern: localStorage.getItem('wsf.backPattern') || 'solid',
@@ -556,10 +557,16 @@ const backOpts = {
   image: null, // dataURL — alleen deze sessie
 };
 
-/* Zet kleuren, motief en (geschaalde) afbeelding op één achterkant. */
+/* Zet rand-, basis- en accentkleur, motief en (geschaalde) afbeelding op één achterkant.
+   De kleur-variabelen staan op .cardback en erven door naar het inzet-vlak; het motief
+   (pattern-class) staat op .cardback-inner. */
 function styleBack(b) {
-  for (const c of [...b.classList]) if (c.startsWith('pat-')) b.classList.remove(c);
-  b.classList.add('pat-' + backOpts.pattern);
+  const inner = b.querySelector('.cardback-inner');
+  if (inner) {
+    for (const c of [...inner.classList]) if (c.startsWith('pat-')) inner.classList.remove(c);
+    inner.classList.add('pat-' + backOpts.pattern);
+  }
+  b.style.setProperty('--border-color', backOpts.border);
   b.style.setProperty('--back-color', backOpts.color);
   b.style.setProperty('--back-color2', backOpts.color2);
   if (backOpts.image) {
@@ -600,6 +607,7 @@ function buildSheets() {
         // gespiegeld voor dubbelzijdig printen (omslaan over de lange zijde)
         b.style.gridRow = String(i < 2 ? 1 : 2);
         b.style.gridColumn = String(i % 2 === 0 ? 2 : 1);
+        b.appendChild(Object.assign(document.createElement('div'), { className: 'cardback-inner' }));
         styleBack(b);
         back.appendChild(b);
       });
@@ -706,6 +714,11 @@ $('#optBacks').addEventListener('change', e => {
   $('#backPanel').hidden = !backOpts.on;
   buildSheets(); fitA6();
 });
+$('#backBorder').addEventListener('input', e => {
+  backOpts.border = e.target.value;
+  localStorage.setItem('wsf.backBorder', backOpts.border);
+  refreshBacks();
+});
 $('#backColor').addEventListener('input', e => {
   backOpts.color = e.target.value;
   localStorage.setItem('wsf.backColor', backOpts.color);
@@ -771,6 +784,7 @@ $('#packFaction').innerHTML = '<option value=""></option>' + Object.entries(D.fa
   .map(([id, name]) => `<option value="${esc(id)}">${esc(name)}</option>`).join('');
 $('#optBacks').checked = backOpts.on;
 $('#backPanel').hidden = !backOpts.on;
+$('#backBorder').value = backOpts.border;
 $('#backColor').value = backOpts.color;
 $('#backColor2').value = backOpts.color2;
 $('#backPattern').value = backOpts.pattern;
@@ -791,8 +805,9 @@ if (LANG === 'en') {
     a6Hint: 'A6 mode: every card is exactly 105 × 148 mm; 4 cards are placed on one A4 sheet (2×2) for cutting. In the print dialog: paper A4, <b>pages per sheet: 1</b> (the app builds the 2×2 sheet itself!), scale <b>100%</b>, and untick <b>headers and footers</b> — otherwise the browser prints date/URL on the sheet.',
     lblFlavour: 'Flavour text on cards', lblOverview: 'Army overview card',
     lblTraits: 'Battle traits & formation', lblLores: 'Lores & manifestations',
-    lblBacks: 'Card backs (double-sided printing)', lblBackColor: 'Colour', lblBackImage: 'Image',
-    lblBackColor2: '2nd colour', lblBackPattern: 'Pattern', lblBackScale: 'Size', lblBackTile: 'tile',
+    lblBacks: 'Card backs (double-sided printing)', lblBackImage: 'Image',
+    lblBackBorder: 'Border', lblBackColor: 'Base', lblBackColor2: 'Accent',
+    lblBackPattern: 'Pattern', lblBackScale: 'Size', lblBackTile: 'tile',
     backsHint: 'Backs only work in A6 mode: behind every sheet of 4 fronts comes a mirrored sheet of backs. Print double-sided, flip on the long edge. Pick a pattern in two colours, and/or your own image scaled with the slider (tiling turns it into a repeating pattern). The image is kept for this session only.',
     packLegend: 'Faction pack', btnPack: 'Generate all faction warscrolls',
     extraLegend: 'Extra card',

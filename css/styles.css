@@ -178,47 +178,51 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
 .cards.size-a6 .kwband, .cards.size-a6 .card-foot { flex: 0 0 auto; }
 .fitbox { transform-origin: top left; }
 .fitbox.two-col .abilities { columns: 2; column-gap: 8px; }
-/* Achterkant voor dubbelzijdig printen: kleur + motief (element-bg) + afbeelding (::before) + rand (::after) */
+/* Achterkant voor dubbelzijdig printen.
+   Drie kleuren: effen rand-band (--border-color) op .cardback, en binnen het
+   inzet-vlak .cardback-inner het motief in --back-color (basis) + --back-color2 (accent). */
 .cardback {
   width: 105mm; height: 148mm; position: relative;
   border: 1.5px solid #232320; border-radius: 5px; overflow: hidden;
+  background-color: var(--border-color, #14100c);
+  padding: 4mm;
+}
+.cardback-inner {
+  position: relative; width: 100%; height: 100%;
+  border-radius: 2.5mm; overflow: hidden;
+  border: 1px solid rgba(244,242,234,.4);
   background-color: var(--back-color, #262b3a);
   background-repeat: repeat; background-position: center;
 }
-/* geüploade afbeelding — bovenop het motief, schaalbaar */
-.cardback::before {
-  content: ''; position: absolute; inset: 0; z-index: 1;
+/* geüploade afbeelding — bovenop het motief, schaalbaar, binnen de rand */
+.cardback-inner::after {
+  content: ''; position: absolute; inset: 0;
   background-image: var(--back-img, none);
   background-repeat: var(--back-img-repeat, no-repeat);
   background-size: var(--back-img-size, cover);
   background-position: center;
   pointer-events: none;
 }
-.cardback::after {
-  content: ''; position: absolute; inset: 4mm; z-index: 2;
-  border: 1px solid rgba(244,242,234,.6); border-radius: 3mm;
-  pointer-events: none;
-}
-/* Motieven — getekend in de 2e kleur over de basiskleur */
-.cardback.pat-stripes {
+/* Motieven — getekend in de accentkleur over de basiskleur */
+.cardback-inner.pat-stripes {
   background-image: repeating-linear-gradient(45deg, var(--back-color2) 0 6px, transparent 6px 18px);
 }
-.cardback.pat-dots {
+.cardback-inner.pat-dots {
   background-image: radial-gradient(var(--back-color2) 16%, transparent 17%);
   background-size: 16px 16px;
 }
-.cardback.pat-grid {
+.cardback-inner.pat-grid {
   background-image:
     linear-gradient(var(--back-color2) 1.5px, transparent 1.5px),
     linear-gradient(90deg, var(--back-color2) 1.5px, transparent 1.5px);
   background-size: 22px 22px;
 }
-.cardback.pat-crosshatch {
+.cardback-inner.pat-crosshatch {
   background-image:
     repeating-linear-gradient(45deg, var(--back-color2) 0 1.5px, transparent 1.5px 13px),
     repeating-linear-gradient(-45deg, var(--back-color2) 0 1.5px, transparent 1.5px 13px);
 }
-.cardback.pat-chevron {
+.cardback-inner.pat-chevron {
   background-image:
     linear-gradient(135deg, var(--back-color2) 25%, transparent 25%),
     linear-gradient(225deg, var(--back-color2) 25%, transparent 25%),
@@ -228,7 +232,7 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
   background-size: 24px 24px;
 }
 /* Schubben: twee halfsteens verspringende rijen bogen (dakpan-effect) */
-.cardback.pat-scales {
+.cardback-inner.pat-scales {
   background-image:
     radial-gradient(circle at 50% 100%, transparent 47%, var(--back-color2) 48% 52%, transparent 53%),
     radial-gradient(circle at 50% 100%, transparent 47%, var(--back-color2) 48% 52%, transparent 53%);
@@ -236,7 +240,7 @@ textarea:focus { outline: 1px solid var(--gold-dim); }
   background-size: 26px 14px;
 }
 /* Ruiten: vier hoekdriehoeken vormen samen een ruitenlattice (argyle) */
-.cardback.pat-diamonds {
+.cardback-inner.pat-diamonds {
   background-image:
     linear-gradient(45deg, var(--back-color2) 25%, transparent 25%),
     linear-gradient(-45deg, var(--back-color2) 25%, transparent 25%),
