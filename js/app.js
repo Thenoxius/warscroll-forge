@@ -802,7 +802,7 @@ if (LANG === 'en') {
     btnGenerate: '⚔ Create cards', btnSample: 'Sample list',
     optionsLegend: 'Options', formatLabel: 'Format',
     sizeL: 'Large', sizeS: 'Compact', sizeA6: 'A6 cards',
-    a6Hint: 'A6 mode: every card is exactly 105 × 148 mm; 4 cards are placed on one A4 sheet (2×2) for cutting. In the print dialog: paper A4, <b>pages per sheet: 1</b> (the app builds the 2×2 sheet itself!), scale <b>100%</b>, and untick <b>headers and footers</b> — otherwise the browser prints date/URL on the sheet.',
+    a6Hint: 'A6 mode: <b>4 cards on one A4 sheet</b> (2×2) for cutting, with a small safe margin so home printers don\'t clip the edges. In the print dialog: paper A4, <b>pages per sheet: 1</b> (the app builds the 2×2 sheet itself!), scale <b>100%</b> (not "fit to page"), and untick <b>headers and footers</b> — otherwise the browser prints date/URL on the sheet.',
     lblFlavour: 'Flavour text on cards', lblOverview: 'Army overview card',
     lblTraits: 'Battle traits & formation', lblLores: 'Lores & manifestations',
     lblBacks: 'Card backs (double-sided printing)', lblBackImage: 'Image',

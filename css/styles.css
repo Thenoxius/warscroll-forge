@@ -477,9 +477,16 @@ table.weapons { width: 100%; border-collapse: collapse; margin-bottom: 7px; }
   .cards.size-l, .cards.size-s { max-width: none; margin: 0; }
   .card { box-shadow: none; }
   .card.excluded { display: none; }
-  /* A6-modus: 2×2-snijvel op A4 (een kwart A4 is exact A6) */
+  /* A6-modus: 2×2-snijvel op A4. Het vel wordt iets verkleind en gecentreerd zodat
+     alles binnen het printbare gebied van thuisprinters valt (die kunnen niet tot de
+     papierrand printen). De hele inhoud schaalt uniform mee, dus niets loopt over. */
   .cards.size-a6 { display: block; margin: 0; }
-  .a6sheet { margin: 0; page-break-after: always; break-after: page; break-inside: avoid; }
+  .a6sheet {
+    margin: 0; page-break-after: always; break-after: page; break-inside: avoid;
+    width: 210mm; height: 297mm;
+    transform: scale(var(--print-scale, 0.93));
+    transform-origin: center center;
+  }
   .a6sheet:last-child { page-break-after: auto; break-after: auto; }
   .a6sheet.backs { opacity: 1; }
   .cards.size-a6 .card { border-radius: 0; }
